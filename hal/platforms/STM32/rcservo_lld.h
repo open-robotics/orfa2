@@ -1,0 +1,173 @@
+/*
+    ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
+                 2011 Giovanni Di Sirio.
+
+    This file is part of ChibiOS/RT.
+
+    ChibiOS/RT is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 3 of the License, or
+    (at your option) any later version.
+
+    ChibiOS/RT is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+
+/**
+ * @file    templates/rcs_lld.h
+ * @brief   RCServo Driver subsystem low level driver header template.
+ *
+ * @addtogroup RCServo
+ * @{
+ */
+
+#ifndef _RCSERVO_LLD_H_
+#define _RCSERVO_LLD_H_
+
+#if HAL_USE_RCSERVO || defined(__DOXYGEN__)
+
+/*===========================================================================*/
+/* Driver constants.                                                         */
+/*===========================================================================*/
+
+/**
+ * @brief Number of RC servo channels per driver.
+ */
+#define RCS_CHANNELS							20
+
+/**
+ * @brief Number of GPIO ports used.
+ */
+#define RCS_GPIOS                 5
+
+#define RCS_GPIOA                 0
+#define RCS_GPIOB                 1
+#define RCS_GPIOC                 2
+#define RCS_GPIOD                 3
+#define RCS_GPIOE                 4
+
+/*===========================================================================*/
+/* Driver pre-compile time settings.                                         */
+/*===========================================================================*/
+
+/**
+ * @brief   RCSD2 driver enable switch.
+ * @details If set to @p TRUE the support for RCSD2 is included.
+ * @note    The default is @p TRUE.
+ */
+#if !defined(STM32_RCS_USE_TIM2) || defined(__DOXYGEN__)
+#define STM32_RCS_USE_TIM2                  TRUE
+#endif
+
+/**
+ * @brief   RCSD2 interrupt priority level setting.
+ */
+#if !defined(STM32_RCS_TIM2_IRQ_PRIORITY) || defined(__DOXYGEN__)
+#define STM32_RCS_TIM2_IRQ_PRIORITY         7
+#endif
+
+/*===========================================================================*/
+/* Derived constants and error checks.                                       */
+/*===========================================================================*/
+
+#if STM32_RCS_USE_TIM2 && !STM32_HAS_TIM2
+#error "TIM2 not present in the selected device"
+#endif
+
+#if !STM32_RCS_USE_TIM2
+#error "RC Servo driver activated but no TIM peripheral assigned"
+#endif
+
+/*===========================================================================*/
+/* Driver data structures and types.                                         */
+/*===========================================================================*/
+
+typedef uint16_t            rcscnt_t;
+typedef uint16_t            rcswidth_t;
+
+/**
+ * @brief   RC Servo channel configuration structure.
+ */
+typedef struct {
+  uint16_t              gpio;
+  uint16_t              mask;
+} RCServoChannelConfig;
+
+/**
+ * @brief   RC Servo one step
+ */
+typedef struct {
+  ioportmask_t              clrmask[RCS_GPIOS];
+  rcscnt_t                  clrcmp;
+} RCServoStep;
+
+/**
+ * @brief   Type of a structure representing an RCServo driver.
+ */
+typedef struct RCServoDriver RCServoDriver;
+
+/**
+ * @brief   Driver configuration structure.
+ * @note    It could be empty on some architectures.
+ */
+typedef struct {
+  RCServoChannelConfig      channels[RCS_CHANNELS];
+} RCServoConfig;
+
+/**
+ * @brief   Structure representing an RCServo driver.
+ */
+struct RCServoDriver {
+  /**
+   * @brief Driver state.
+   */
+  rcsstate_t                state;
+  /**
+   * @brief Current configuration data.
+   */
+  const RCServoConfig       *config;
+  /* End of the mandatory fields.*/
+  TIM_TypeDef               *tim;
+  GPIO_TypeDef              *gpio[RCS_GPIOS];
+  ioportmask_t              enabled[RCS_GPIOS];
+  rcswidth_t                width[RCS_CHANNELS];
+
+  RCServoStep               steps[2][RCS_CHANNELS];
+  RCServoStep               *sfirst, *scurr, *slast;
+  RCServoStep               *next_sfirst, *next_slast;
+  };
+
+/*===========================================================================*/
+/* Driver macros.                                                            */
+/*===========================================================================*/
+
+#define RCS_CHANNEL(gpio, pin) { RCS_##gpio, 1<<pin }
+
+/*===========================================================================*/
+/* External declarations.                                                    */
+/*===========================================================================*/
+
+#if STM32_RCS_USE_TIM2 || defined(__DOXYGEN__)
+extern RCServoDriver RCSD2;
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+  void rcs_lld_init(void);
+  void rcs_lld_start(RCServoDriver *rcsp);
+  void rcs_lld_stop(RCServoDriver *rcsp);
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* HAL_USE_RCSERVO */
+
+#endif /* _RCSERVO_LLD_H_ */
+
+/** @} */

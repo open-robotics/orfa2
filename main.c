@@ -19,7 +19,6 @@
 */
 
 #include "ch.h"
-#include "hal.h"
 #include "ohal.h"
 #include "chprintf.h"
 
@@ -84,13 +83,14 @@ int main(void) {
   chSysInit();
 
   sdStart(&SD1, NULL);
-
   rcsStart(&RCSD2, &rcscfg);
 
   /*
    * Creates the blinker thread.
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
+
+  rcswidth_t w1 = 1500, w2 = 2000;
 
   /*
    * Normal main() thread activity, in this demo it does nothing except
@@ -99,7 +99,14 @@ int main(void) {
   while (TRUE) {
 	//servo_init();
 	chprintf((struct BaseChannel*)&SD1, "i am a live!\r\n");
-    chThdSleepMilliseconds(500);
+	rcs_lld_enable_channel(&RCSD2, 19, w1);
+	rcs_lld_enable_channel(&RCSD2, 18, w2);
+	rcs_lld_sync(&RCSD2);
+    chThdSleepMilliseconds(100);
+	w1 += 10;
+	if (w1 > 2000) w1 = 1000;
+	w2 -= 10;
+	if (w2 < 1000) w2 = 2000;
   }
 
   return 0;

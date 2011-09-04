@@ -87,6 +87,7 @@
 /* Driver data structures and types.                                         */
 /*===========================================================================*/
 
+typedef uint8_t             rcschannel_t;
 typedef uint16_t            rcscnt_t;
 typedef uint16_t            rcswidth_t;
 
@@ -135,7 +136,7 @@ struct RCServoDriver {
   TIM_TypeDef               *tim;
   GPIO_TypeDef              *gpio[RCS_GPIOS];
   ioportmask_t              enabled[RCS_GPIOS];
-  rcswidth_t                width[RCS_CHANNELS];
+  rcswidth_t                widths[RCS_CHANNELS];
 
   RCServoStep               steps[2][RCS_CHANNELS];
   RCServoStep               *sfirst, *scurr, *slast;
@@ -162,6 +163,11 @@ extern "C" {
   void rcs_lld_init(void);
   void rcs_lld_start(RCServoDriver *rcsp);
   void rcs_lld_stop(RCServoDriver *rcsp);
+  void rcs_lld_enable_channel(RCServoDriver *rcsp,
+                              rcschannel_t channel,
+                              rcswidth_t width);
+  void rcs_lld_disable_channel(RCServoDriver *rcsp, rcschannel_t channel);
+  void rcs_lld_sync(RCServoDriver *pcsp);
 #ifdef __cplusplus
 }
 #endif

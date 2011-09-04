@@ -29,7 +29,7 @@
 #ifndef _OHAL_H_
 #define _OHAL_H_
 
-#include "halconf.h"
+#include "hal.h"
 
 #include "rcservo.h"
 

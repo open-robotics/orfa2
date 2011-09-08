@@ -92,12 +92,15 @@ int main(void) {
 
   rcswidth_t w1 = 1500, w2 = 2000;
 
+  rcs_lld_enable_channel(&RCSD2, 10, 2000);
+  rcs_lld_enable_channel(&RCSD2, 18, 1500);
+  rcs_lld_enable_channel(&RCSD2, 19, 1500);
+
   /*
    * Normal main() thread activity, in this demo it does nothing except
    * sleeping in a loop and check the button state.
    */
   while (TRUE) {
-	//servo_init();
 	chprintf((struct BaseChannel*)&SD1, "i am a live!\r\n");
 	rcs_lld_enable_channel(&RCSD2, 19, w1);
 	rcs_lld_enable_channel(&RCSD2, 18, w2);

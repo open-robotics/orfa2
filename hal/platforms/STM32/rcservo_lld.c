@@ -28,6 +28,7 @@
 
 #include "ch.h"
 #include "ohal.h"
+#include <string.h>
 
 #if HAL_USE_RCSERVO || defined(__DOXYGEN__)
 
@@ -166,7 +167,7 @@ void rcs_lld_start(RCServoDriver *rcsp) {
     }
 #endif
 
-    rcsp->tim->CCMR1 = TIM_CCMR1_OC1PE;
+    rcsp->tim->CCMR1 = 0;
     rcsp->tim->CCMR2 = 0;
   }
   else {
@@ -226,77 +227,60 @@ void rcs_lld_disable_channel(RCServoDriver *rcsp, rcschannel_t channel) {
 
 void rcs_lld_sync(RCServoDriver *rcsp) {
   RCServoStep *steps;
-  rcscnt_t prev_width;
-  uint16_t i, j, k;
-  int16_t len;
+  uint16_t i, len;
 
   if (rcsp->next_sfirst != NULL)
     return; // TODO error
 
   steps = (rcsp->sfirst == rcsp->steps[0]) ? rcsp->steps[1] : rcsp->steps[0];
 
-  /* 1. load all widths & masks,
-   * remove duplications and disabled channels.
-   */
-  memset(steps, 0, sizeof(rcsp->steps[0]));
-  for (i = 0, len = -1, prev_width = RCS_PERIOD;
-      i < RCS_CHANNELS; i++) {
+  for (i = 0, len = 0; i < RCS_CHANNELS; i++) {
+    RCServoStep *p;
+    uint16_t l, u, idx;
     uint16_t gpio = rcsp->config->channels[i].gpio;
     uint16_t mask = rcsp->config->channels[i].mask;
+    rcscnt_t pw = rcsp->widths[i];
 
-    if (rcsp->widths[i] > 0) {
-      if (prev_width != rcsp->widths[i]) {
-        prev_width = rcsp->widths[i];
-        len++;
-      }
-      steps[len].clrcmp = rcsp->widths[i];
-      steps[len].clrmask[gpio] |= mask;
-      rcsp->enabled[gpio] |= mask;
-    }
-    else {
+    /* skip if disabled */
+    if (pw == 0) {
       rcsp->enabled[gpio] &= ~mask;
+      continue;
     }
-  }
 
-  /* 2. sort.
-   * replace bubble sort later 
-   */
-  while (i) {
-    i = 0;
-    for (j = 0; j < len - 1; j++)
-      if (steps[j].clrcmp > steps[j + 1].clrcmp) {
-        RCServoStep tmp_step;
-        tmp_step = steps[j];
-        steps[j] = steps[j + 1];
-        steps[j + 1] = tmp_step;
-        i = 1;
-      }
-  }
+    /* enable */
+    rcsp->enabled[gpio] |= mask;
 
-  /* 3. remove duplications
-   */
-  for (i = 0; i < len - 1; i++) {
-    /* find dup */
-    for (j = i + 1; j < len; j++) {
-      if (steps[i].clrcmp == steps[j].clrcmp) {
-        for (k = 0; k < RCS_GPIOS; k++)
-          steps[i].clrmask[k] |= steps[j].clrmask[k];
-      }
+    /* bsearch width blackjack and hookers */
+    l = 0;
+    u = len;
+    while (l < u) {
+      idx = (l + u) / 2;
+      p = steps + idx;
+      if (pw < p->clrcmp)
+        u = idx;
+      else if (pw > p->clrcmp)
+        l = idx + 1;
       else
-        break;
+        break; /* match */
     }
-    /* move if needed */
-    if (i + 1 != j)
-      for (k = i + 1; j < len; k++, j++) {
-        steps[k] = steps[j];
-        len--;
-      }
+
+    if (l < u)
+      /* step founded */
+      p->clrmask[gpio] |= mask;
+    else {
+      /* insert new step */
+      p = steps + l;
+      memmove(p + 1, p, sizeof(*p) * (len - l));
+      memset(p->clrmask, 0, sizeof(p->clrmask));
+      p->clrcmp = pw;
+      p->clrmask[gpio] = mask;
+      len++;
+    }
   }
 
-  /* 4. set next buffer for isr
-   */
+  /* set next buffer for interrupt */
   rcsp->next_sfirst = steps;
-  rcsp->next_slast = steps + len;
+  rcsp->next_slast = steps + len - 1;
 }
 
 #endif /* HAL_USE_RCSERVO */

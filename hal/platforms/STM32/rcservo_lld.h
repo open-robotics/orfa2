@@ -103,7 +103,7 @@ typedef struct {
  * @brief   RC Servo one step
  */
 typedef struct {
-  ioportmask_t              clrmask[RCS_GPIOS];
+  uint16_t                  clrmask[RCS_GPIOS];
   rcscnt_t                  clrcmp;
 } RCServoStep;
 

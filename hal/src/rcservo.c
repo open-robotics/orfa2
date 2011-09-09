@@ -118,6 +118,75 @@ void rcsStop(RCServoDriver *rcsp) {
   chSysUnlock();
 }
 
+/**
+ * @brief   Enables a RCServo channel.
+ * @pre     The RCServo unit must have been activated using @p rcsStart().
+ *
+ * @param[in] rcsp      pointer to a @p RCServoDriver object
+ * @param[in] channel   servo channel identifier (0..RCS_CHANNELS-1)
+ * @param[in] with      servo pulse width in usecs
+ *
+ * @api
+ */
+void rcsEnableChannel(RCServoDriver *rcsp,
+                      rcschannel_t channel,
+                      rcswidth_t with) {
+
+  chDbgCheck((rcsp != NULL) && (channel < RCS_CHANNELS),
+             "rcsEnableChannel");
+
+  if (with > RCS_PW_MAX)
+    with = RCS_PW_MAX;
+  else if (with < RCS_PW_MIN)
+    with = RCS_PW_MIN;
+
+  //chSysLock();
+  chDbgAssert(rcsp->state == RCS_READY,
+              "rcsEnableChannel(), #1", "not ready");
+  rcs_lld_enable_channel(rcsp, channel, with);
+  //chSysUnlock();
+}
+
+/**
+ * @brief   Disables a RCServo channel.
+ * @pre     The RCServo unit must have been activated using @p rcsStart().
+ *
+ * @param[in] rcsp      pointer to a @p RCServoDriver object
+ * @param[in] channel   servo channel identifier (0..RCS_CHANNELS-1)
+ *
+ * @api
+ */
+void rcsDisableChannel(RCServoDriver *rcsp, rcschannel_t channel) {
+
+  chDbgCheck((rcsp != NULL) && (channel < RCS_CHANNELS),
+             "rcsDisableChannel");
+
+  chSysLock();
+  chDbgAssert(rcsp->state == RCS_READY,
+              "rcsDisableChannel(), #1", "not ready");
+  rcs_lld_disable_channel(rcsp, channel);
+  chSysUnlock();
+}
+
+/**
+ * @brief   Sync all RCServo channels.
+ * @pre     The RCServo unit must have been activated using @p rcsStart().
+ *
+ * @param[in] rcsp      pointer to a @p RCServoDriver object
+ *
+ * @api
+ */
+void rcsSync(RCServoDriver *rcsp) {
+
+  chDbgCheck(rcsp != NULL, "rcsSync");
+
+  //chSysLock();
+  chDbgAssert(rcsp->state == RCS_READY,
+              "rcsSync(), #1", "not ready");
+  rcs_lld_sync(rcsp);
+  //chSysUnlock();
+}
+
 #endif /* HAL_USE_RCSERVO */
 
 /** @} */

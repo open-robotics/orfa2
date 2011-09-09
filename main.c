@@ -90,11 +90,14 @@ int main(void) {
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
-  rcswidth_t w1 = 1500, w2 = 2000;
+  rcswidth_t w1 = 1500, s1 = 1;
 
-  rcs_lld_enable_channel(&RCSD2, 10, 2000);
-  rcs_lld_enable_channel(&RCSD2, 18, 1500);
-  rcs_lld_enable_channel(&RCSD2, 19, 1500);
+  rcsEnableChannel(&RCSD2, 8, w1);
+  rcsEnableChannel(&RCSD2, 9, w1);
+  rcsEnableChannel(&RCSD2, 14, w1);
+  rcsEnableChannel(&RCSD2, 15, w1);
+  rcsEnableChannel(&RCSD2, 18, w1);
+  rcsEnableChannel(&RCSD2, 19, w1);
 
   /*
    * Normal main() thread activity, in this demo it does nothing except
@@ -102,14 +105,19 @@ int main(void) {
    */
   while (TRUE) {
 	chprintf((struct BaseChannel*)&SD1, "i am a live!\r\n");
-	rcs_lld_enable_channel(&RCSD2, 19, w1);
-	rcs_lld_enable_channel(&RCSD2, 18, w2);
-	rcs_lld_sync(&RCSD2);
-    chThdSleepMilliseconds(100);
-	w1 += 10;
-	if (w1 > 2000) w1 = 1000;
-	w2 -= 10;
-	if (w2 < 1000) w2 = 2000;
+
+	rcsEnableChannel(&RCSD2, 8, w1);
+	rcsEnableChannel(&RCSD2, 9, w1 + 10);
+	rcsEnableChannel(&RCSD2, 14, w1 + 5);
+	rcsEnableChannel(&RCSD2, 15, w1 - 5);
+	rcsEnableChannel(&RCSD2, 18, w1);
+	rcsEnableChannel(&RCSD2, 19, w1 + 300);
+
+	rcsSync(&RCSD2);
+    chThdSleepMilliseconds(20);
+	w1 += s1;
+	if (w1 > 2000) s1 = -1;
+	else if (w1 < 1000) s1 = 1;
   }
 
   return 0;

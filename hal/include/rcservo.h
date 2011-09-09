@@ -73,6 +73,11 @@ extern "C" {
   void rcsObjectInit(RCServoDriver *rcsp);
   void rcsStart(RCServoDriver *rcsp, const RCServoConfig *config);
   void rcsStop(RCServoDriver *rcsp);
+  void rcsEnableChannel(RCServoDriver *rcsp,
+                        rcschannel_t channel,
+                        rcswidth_t width);
+  void rcsDisableChannel(RCServoDriver *rcsp, rcschannel_t channel);
+  void rcsSync(RCServoDriver *rcsp);
 #ifdef __cplusplus
 }
 #endif

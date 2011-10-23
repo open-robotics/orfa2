@@ -22,6 +22,7 @@
 #include "ohal.h"
 #include "chprintf.h"
 #include "servo.h"
+#include "ssc32.h"
 
 /*
  * Red LED blinker thread, times are in milliseconds.
@@ -66,27 +67,15 @@ int main(void) {
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
-  rcswidth_t w1 = 1500, s1 = 100;
-
   /*
    * Normal main() thread activity, in this demo it does nothing except
    * sleeping in a loop and check the button state.
    */
   while (TRUE) {
-	chprintf((struct BaseChannel*)&SD1, "i am a live!\r\n");
-
-	servo_msg_t msg;
-
-	msg.channel = 8;
-	msg.width = w1;
-	msg.speed = 200;
-
-	chIOWriteTimeout(&servo_cmd, &msg, sizeof(msg), TIME_INFINITE);
-
+	chprintf((struct BaseChannel*)&SD1, "starting SSC32 Sync!\r\n");
+	shSsc32Sync((struct BaseChannel*)&SD1, 0, NULL);
+	chprintf((struct BaseChannel*)&SD1, "shSsc32Sync terminated!\r\n");
     chThdSleepMilliseconds(200);
-	w1 += s1;
-	if (w1 > 2000) s1 = -1;
-	else if (w1 < 1000) s1 = 1;
   }
 
   return 0;

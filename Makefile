@@ -63,6 +63,7 @@ include $(CHIBIOS)/os/kernel/kernel.mk
 include $(ORFA)/hal/platforms/STM32/platform.mk
 include $(ORFA)/hal/hal.mk
 include $(ORFA)/com/com.mk
+include $(ORFA)/shell/shell.mk
 
 # Define linker script file here
 LDSCRIPT= $(PORTLD)/STM32F103xE.ld
@@ -79,6 +80,7 @@ CSRC = $(PORTSRC) \
        $(CHIBIOS)/os/various/syscalls.c \
        $(CHIBIOS)/os/various/chprintf.c \
 	   $(COMSRC) \
+	   $(SHSRC) \
        main.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
@@ -111,7 +113,7 @@ ASMSRC = $(PORTASM)
 INCDIR = $(PORTINC) $(KERNINC) $(TESTINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) \
          $(CHIBIOS)/os/various \
-		 $(COMINC)
+		 $(COMINC) $(SHINC)
 
 #
 # Project, sources and paths

@@ -21,7 +21,7 @@
 #include "ch.h"
 #include "ohal.h"
 #include "chprintf.h"
-
+#include "servo.h"
 
 /*
  * Red LED blinker thread, times are in milliseconds.
@@ -41,31 +41,6 @@ static msg_t Thread1(void *arg) {
   return 0;
 }
 
-static RCServoConfig rcscfg = {
-	{
-	RCS_CHANNEL(GPIOE, GPIOE_S00),
-	RCS_CHANNEL(GPIOE, GPIOE_S01),
-	RCS_CHANNEL(GPIOE, GPIOE_S02),
-	RCS_CHANNEL(GPIOE, GPIOE_S03),
-	RCS_CHANNEL(GPIOE, GPIOE_S04),
-	RCS_CHANNEL(GPIOE, GPIOE_S05),
-	RCS_CHANNEL(GPIOE, GPIOE_S06),
-	RCS_CHANNEL(GPIOD, GPIOD_S07),
-	RCS_CHANNEL(GPIOD, GPIOD_S08),
-	RCS_CHANNEL(GPIOD, GPIOD_S09),
-	RCS_CHANNEL(GPIOD, GPIOD_S10),
-	RCS_CHANNEL(GPIOD, GPIOD_S11),
-	RCS_CHANNEL(GPIOC, GPIOC_S12),
-	RCS_CHANNEL(GPIOC, GPIOC_S13),
-	RCS_CHANNEL(GPIOC, GPIOC_S14),
-	RCS_CHANNEL(GPIOC, GPIOC_S15),
-	RCS_CHANNEL(GPIOA, GPIOA_S16),
-	RCS_CHANNEL(GPIOC, GPIOC_S17),
-	RCS_CHANNEL(GPIOC, GPIOC_S18),
-	RCS_CHANNEL(GPIOC, GPIOC_S19)
-	}
-};
-
 /*
  * Application entry point.
  */
@@ -83,21 +58,15 @@ int main(void) {
   chSysInit();
 
   sdStart(&SD1, NULL);
-  rcsStart(&RCSD2, &rcscfg);
+
+  servoInit();
 
   /*
    * Creates the blinker thread.
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
-  rcswidth_t w1 = 1500, s1 = 1;
-
-  rcsEnableChannel(&RCSD2, 8, w1);
-  rcsEnableChannel(&RCSD2, 9, w1);
-  rcsEnableChannel(&RCSD2, 14, w1);
-  rcsEnableChannel(&RCSD2, 15, w1);
-  rcsEnableChannel(&RCSD2, 18, w1);
-  rcsEnableChannel(&RCSD2, 19, w1);
+  rcswidth_t w1 = 1500, s1 = 100;
 
   /*
    * Normal main() thread activity, in this demo it does nothing except
@@ -106,15 +75,15 @@ int main(void) {
   while (TRUE) {
 	chprintf((struct BaseChannel*)&SD1, "i am a live!\r\n");
 
-	rcsEnableChannel(&RCSD2, 8, w1);
-	rcsEnableChannel(&RCSD2, 9, w1 + 10);
-	rcsEnableChannel(&RCSD2, 14, w1 + 5);
-	rcsEnableChannel(&RCSD2, 15, w1 - 5);
-	rcsEnableChannel(&RCSD2, 18, w1);
-	rcsEnableChannel(&RCSD2, 19, w1 + 300);
+	servo_msg_t msg;
 
-	rcsSync(&RCSD2);
-    chThdSleepMilliseconds(20);
+	msg.channel = 8;
+	msg.width = w1;
+	msg.speed = 200;
+
+	chIOWriteTimeout(&servo_cmd, &msg, sizeof(msg), TIME_INFINITE);
+
+    chThdSleepMilliseconds(200);
 	w1 += s1;
 	if (w1 > 2000) s1 = -1;
 	else if (w1 < 1000) s1 = 1;

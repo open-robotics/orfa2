@@ -1,11 +1,4 @@
-syntax: glob
-*.o
 *.swp
-*.lst
 .dep/*
-orfa2.bin
-orfa2.dmp
-orfa2.elf
-orfa2.hex
-orfa2.map
+build/*
 core

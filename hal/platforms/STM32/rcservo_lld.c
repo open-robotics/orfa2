@@ -161,7 +161,7 @@ void rcs_lld_start(RCServoDriver *rcsp) {
       RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
       RCC->APB1RSTR = RCC_APB1RSTR_TIM2RST;
       RCC->APB1RSTR = 0;
-      NVICEnableVector(TIM2_IRQn,
+      nvicEnableVector(TIM2_IRQn,
                        CORTEX_PRIORITY_MASK(STM32_RCS_TIM2_IRQ_PRIORITY));
       clock = STM32_TIMCLK1;
     }

@@ -35,11 +35,11 @@ static void vtmr_func(void *p)
 				tmp /= total_time[i];
 				tmp += target_width[i];
 			}
-			rcsEnableChannel(&RCSD2, i, tmp);
+			rcsEnableChannel(&RCSD1, i, tmp);
 		}
 
 	if (updated)
-		rcsSync(&RCSD2);
+		rcsSync(&RCSD1);
 
 	if (!updated && !endq_reported) {
 		endq_reported = TRUE;
@@ -85,7 +85,7 @@ static size_t writet(void *ip, uint8_t *bp, size_t n, systime_t time)
 	for (unsigned i = 0; i < RCS_CHANNELS; i++)
 		if (target[i] != 0 && max_speed[i] != 0) {
 			unsigned dx = 0;
-			unsigned pos = RCSD2.widths[i]; // XXX
+			unsigned pos = rcsGetWidth(&RCSD1, i);
 			if (target[i] > pos)
 				dx = target[i] - pos;
 			else
@@ -102,7 +102,7 @@ static size_t writet(void *ip, uint8_t *bp, size_t n, systime_t time)
 
 	for (unsigned i = 0; i < RCS_CHANNELS; i++)
 		if (target[i] != 0) {
-			unsigned pos = RCSD2.widths[i]; // XXX
+			unsigned pos = rcsGetWidth(&RCSD1, i);
 			debug("s[%d]: %d -> %d\r\n", i, pos, target_width[i]);
 			start_width[i] = pos;
 			target_width[i] = target[i];
@@ -139,34 +139,9 @@ static struct BaseAsynchronousChannelVMT vmt = {
 
 BaseAsynchronousChannel servo_cmd;
 
-static RCServoConfig rcscfg = {
-	{
-	RCS_CHANNEL(GPIOE, GPIOE_S00),
-	RCS_CHANNEL(GPIOE, GPIOE_S01),
-	RCS_CHANNEL(GPIOE, GPIOE_S02),
-	RCS_CHANNEL(GPIOE, GPIOE_S03),
-	RCS_CHANNEL(GPIOE, GPIOE_S04),
-	RCS_CHANNEL(GPIOE, GPIOE_S05),
-	RCS_CHANNEL(GPIOE, GPIOE_S06),
-	RCS_CHANNEL(GPIOD, GPIOD_S07),
-	RCS_CHANNEL(GPIOD, GPIOD_S08),
-	RCS_CHANNEL(GPIOD, GPIOD_S09),
-	RCS_CHANNEL(GPIOD, GPIOD_S10),
-	RCS_CHANNEL(GPIOD, GPIOD_S11),
-	RCS_CHANNEL(GPIOC, GPIOC_S12),
-	RCS_CHANNEL(GPIOC, GPIOC_S13),
-	RCS_CHANNEL(GPIOC, GPIOC_S14),
-	RCS_CHANNEL(GPIOC, GPIOC_S15),
-	RCS_CHANNEL(GPIOA, GPIOA_S16),
-	RCS_CHANNEL(GPIOC, GPIOC_S17),
-	RCS_CHANNEL(GPIOC, GPIOC_S18),
-	RCS_CHANNEL(GPIOC, GPIOC_S19)
-	}
-};
-
 void servoInit()
 {
-	rcsStart(&RCSD2, &rcscfg);
+	rcsStart(&RCSD1, &rcs_default_config);
 
 	servo_cmd.vmt = &vmt;
 	chEvtInit(&servo_cmd.event);

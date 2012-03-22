@@ -2,14 +2,18 @@
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
                  2011 Giovanni Di Sirio.
 
-    This file is part of ChibiOS/RT.
+    ORFA2 - Copyright (C) 2012 Vladimir Ermakov.
 
-    ChibiOS/RT is free software; you can redistribute it and/or modify
+    This file is part of ORFA2.
+	Based on board.h for OLIMEX STM32-P103 board written
+    by Giovanni Di Sirio.
+
+    ORFA2 is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 3 of the License, or
     (at your option) any later version.
 
-    ChibiOS/RT is distributed in the hope that it will be useful,
+    ORFA2 is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
@@ -22,15 +26,15 @@
 #define _BOARD_H_
 
 /*
- * Setup for the Open Robotics OR-STM32-DS board.
+ * Setup for the Open Robotics OR-STM32F1-DS board.
  */
 
 /*
  * Board identifier.
  */
-#define BOARD_OR_STM32_DS
-#define BOARD_OR_STM32_DS_REV0
-#define BOARD_NAME              "Open Robotics OR-STM32-DS"
+#define BOARD_OR_STM32F1_DS
+#define BOARD_OR_STM32F1_DS_REV1
+#define BOARD_NAME              "Open Robotics OR-STM32F1-DS"
 
 /*
  * Board frequencies.
@@ -239,6 +243,16 @@
 #define VAL_GPIOECRL            0x37777777      /*  PE7...PE0 */
 #define VAL_GPIOECRH            0x8BB3BBBB      /* PE15...PE8 */
 #define VAL_GPIOEODR            0xFFFF807F
+
+/*
+ * USB bus activation macro, required by the USB driver.
+ */
+#define usb_lld_connect_bus(usbp) (0) /*palClearPad(GPIOC, GPIOC_USB_DISC)*/
+
+/*
+ * USB bus de-activation macro, required by the USB driver.
+ */
+#define usb_lld_disconnect_bus(usbp) (0) /*palSetPad(GPIOC, GPIOC_USB_DISC)*/
 
 #if !defined(_FROM_ASM_)
 #ifdef __cplusplus

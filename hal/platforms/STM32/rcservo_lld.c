@@ -46,81 +46,66 @@
 /* Driver exported variables.                                                */
 /*===========================================================================*/
 
-#if STM32_RCS_USE_TIM2
-RCServoDriver RCSD2;
-#endif
+RCServoDriver RCSD1;
 
 /*===========================================================================*/
 /* Driver local variables.                                                   */
 /*===========================================================================*/
 
+static GPIO_TypeDef* const gpios[RCS_GPIOS] = {
+	GPIOA, GPIOB, GPIOC, GPIOD, GPIOE
+};
+
 /*===========================================================================*/
 /* Driver local functions.                                                   */
 /*===========================================================================*/
-
-#if STM32_RCS_USE_TIM2 || defined(__DOXYGEN__)
-/**
- * @brief   Common TIM2...TIM5 IRQ handler.
- * @note    It is assumed that the various sources are only activated if the
- *          associated callback pointer is not equal to @p NULL in order to not
- *          perform an extra check in a potentially critical interrupt handler.
- *
- * @param[in] rcsp      pointer to a @p RCServoDriver object
- */
-static void serve_interrupt(RCServoDriver *rcsp) {
-  uint16_t sr;
-  int i;
-
-  sr  = rcsp->tim->SR;
-  sr &= rcsp->tim->DIER;
-  rcsp->tim->SR = ~(TIM_SR_CC1IF | TIM_SR_CC2IF | TIM_SR_CC3IF |
-                    TIM_SR_CC4IF | TIM_SR_UIF);
-
-  if ((sr & TIM_SR_CC1IF) != 0) {
-    for (i = 0; i < RCS_GPIOS; i++)
-      rcsp->gpio[i]->BRR = rcsp->scurr->clrmask[i];
-
-    if (rcsp->scurr < rcsp->slast) {
-      rcsp->scurr++;
-      rcsp->tim->CCR1 = rcsp->scurr->clrcmp;
-    }
-  }
-
-  if ((sr & TIM_SR_UIF) != 0) {
-    for (i = 0; i < RCS_GPIOS; i++)
-      rcsp->gpio[i]->BSRR = rcsp->enabled[i];
-
-    if (rcsp->next_sfirst != NULL && rcsp->next_slast != NULL) {
-      rcsp->sfirst = rcsp->next_sfirst;
-      rcsp->slast = rcsp->next_slast;
-      rcsp->next_sfirst = NULL;
-      rcsp->next_slast = NULL;
-    }
-    rcsp->scurr = rcsp->sfirst;
-    rcsp->tim->CCR1 = rcsp->scurr->clrcmp;
-  }
-}
-#endif /* STM32_RCS_USE_TIM2 */
 
 /*===========================================================================*/
 /* Driver interrupt handlers.                                                */
 /*===========================================================================*/
 
-#if STM32_RCS_USE_TIM2
 /**
  * @brief   TIM2 interrupt handler.
  *
  * @isr
  */
 CH_IRQ_HANDLER(TIM2_IRQHandler) {
+  uint16_t sr;
+  int i;
 
   CH_IRQ_PROLOGUE();
 
-  serve_interrupt(&RCSD2);
+  sr  = TIM2->SR;
+  sr &= TIM2->DIER;
+  TIM2->SR = ~(TIM_SR_CC1IF | TIM_SR_CC2IF | TIM_SR_CC3IF |
+		  TIM_SR_CC4IF | TIM_SR_UIF);
+
+  if ((sr & TIM_SR_CC1IF) != 0) {
+    for (i = 0; i < RCS_GPIOS; i++)
+      gpios[i]->BRR = RCSD1.scurr->clrmask[i];
+
+    if (RCSD1.scurr < RCSD1.slast) {
+      RCSD1.scurr++;
+      TIM2->CCR1 = RCSD1.scurr->clrcmp;
+    }
+  }
+
+  if ((sr & TIM_SR_UIF) != 0) {
+    for (i = 0; i < RCS_GPIOS; i++)
+      gpios[i]->BSRR = RCSD1.enabled[i];
+
+    if (RCSD1.next_sfirst != NULL && RCSD1.next_slast != NULL) {
+      RCSD1.sfirst = RCSD1.next_sfirst;
+      RCSD1.slast = RCSD1.next_slast;
+      RCSD1.next_sfirst = NULL;
+      RCSD1.next_slast = NULL;
+    }
+    RCSD1.scurr = RCSD1.sfirst;
+    TIM2->CCR1 = RCSD1.scurr->clrcmp;
+  }
 
   CH_IRQ_EPILOGUE();
 }
-#endif /* STM32_RCS_USE_TIM2 */
 
 /*===========================================================================*/
 /* Driver exported functions.                                                */
@@ -133,18 +118,10 @@ CH_IRQ_HANDLER(TIM2_IRQHandler) {
  */
 void rcs_lld_init(void) {
 
-#if STM32_RCS_USE_TIM2
-  rcsObjectInit(&RCSD2);
-  RCSD2.tim = TIM2;
-  RCSD2.gpio[0] = GPIOA;
-  RCSD2.gpio[1] = GPIOB;
-  RCSD2.gpio[2] = GPIOC;
-  RCSD2.gpio[3] = GPIOD;
-  RCSD2.gpio[4] = GPIOE;
-  RCSD2.sfirst = RCSD2.steps[0];
-  RCSD2.scurr = RCSD2.sfirst;
-  RCSD2.slast = RCSD2.sfirst;
-#endif
+  rcsObjectInit(&RCSD1);
+  RCSD1.sfirst = RCSD1.steps[0];
+  RCSD1.scurr = RCSD1.sfirst;
+  RCSD1.slast = RCSD1.sfirst;
 }
 
 /**
@@ -157,32 +134,29 @@ void rcs_lld_init(void) {
 void rcs_lld_start(RCServoDriver *rcsp) {
   uint32_t clock, psc;
 
-  if (rcsp->state == RCS_STOP) {
+  (void) rcsp;
+  if (RCSD1.state == RCS_STOP) {
     /* Clock activation and timer reset.*/
-#if STM32_RCS_USE_TIM2
-    if (&RCSD2 == rcsp) {
-      RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
-      RCC->APB1RSTR = RCC_APB1RSTR_TIM2RST;
-      RCC->APB1RSTR = 0;
-      nvicEnableVector(TIM2_IRQn,
-                       CORTEX_PRIORITY_MASK(STM32_RCS_TIM2_IRQ_PRIORITY));
-      clock = STM32_TIMCLK1;
-    }
-#endif
+    RCC->APB1ENR |= RCC_APB1ENR_TIM2EN;
+    RCC->APB1RSTR = RCC_APB1RSTR_TIM2RST;
+    RCC->APB1RSTR = 0;
+    nvicEnableVector(TIM2_IRQn,
+        CORTEX_PRIORITY_MASK(STM32_RCS_TIM2_IRQ_PRIORITY));
+    clock = STM32_TIMCLK1;
 
-    rcsp->tim->CCMR1 = 0;
-    rcsp->tim->CCMR2 = 0;
+    TIM2->CCMR1 = 0;
+    TIM2->CCMR2 = 0;
   }
   else {
     /* Driver re-configuration scenario, it must be stopped first.*/
-    rcsp->tim->CR1  = 0;                    /* Timer disabled.              */
-    rcsp->tim->DIER = 0;                    /* All IRQs disabled.           */
-    rcsp->tim->SR   = 0;                    /* Clear eventual pending IRQs. */
-    rcsp->tim->CCR1 = 0;                    /* Comparator 1 disabled.       */
-    rcsp->tim->CCR2 = 0;                    /* Comparator 2 disabled.       */
-    rcsp->tim->CCR3 = 0;                    /* Comparator 3 disabled.       */
-    rcsp->tim->CCR4 = 0;                    /* Comparator 4 disabled.       */
-    rcsp->tim->CNT  = 0;                    /* Counter reset to zero.       */
+    TIM2->CR1  = 0;                    /* Timer disabled.              */
+    TIM2->DIER = 0;                    /* All IRQs disabled.           */
+    TIM2->SR   = 0;                    /* Clear eventual pending IRQs. */
+    TIM2->CCR1 = 0;                    /* Comparator 1 disabled.       */
+    TIM2->CCR2 = 0;                    /* Comparator 2 disabled.       */
+    TIM2->CCR3 = 0;                    /* Comparator 3 disabled.       */
+    TIM2->CCR4 = 0;                    /* Comparator 4 disabled.       */
+    TIM2->CNT  = 0;                    /* Counter reset to zero.       */
   }
 
   /* Timer configuration.*/
@@ -190,15 +164,15 @@ void rcs_lld_start(RCServoDriver *rcsp) {
   chDbgAssert((psc <= 0xFFFF) &&
               ((psc + 1) * RCS_FREQ) == clock,
               "rcs_lld_start(), #1", "invalid frequency");
-  rcsp->tim->PSC  = (uint16_t)psc;
-  rcsp->tim->ARR  = (uint16_t)(RCS_PERIOD - 1);
+  TIM2->PSC  = (uint16_t)psc;
+  TIM2->ARR  = (uint16_t)(RCS_PERIOD - 1);
 
-  rcsp->tim->CCER = 0;
-  rcsp->tim->EGR  = TIM_EGR_UG;             /* Update event.                */
-  rcsp->tim->DIER = TIM_DIER_UIE | TIM_DIER_CC1IE;
-  rcsp->tim->SR   = 0;                      /* Clear pending IRQs.          */
+  TIM2->CCER = 0;
+  TIM2->EGR  = TIM_EGR_UG;             /* Update event.                */
+  TIM2->DIER = TIM_DIER_UIE | TIM_DIER_CC1IE;
+  TIM2->SR   = 0;                      /* Clear pending IRQs.          */
   /* Timer configured and started.*/
-  rcsp->tim->CR1  = TIM_CR1_ARPE | TIM_CR1_URS | TIM_CR1_CEN;
+  TIM2->CR1  = TIM_CR1_ARPE | TIM_CR1_URS | TIM_CR1_CEN;
 }
 
 /**
@@ -210,7 +184,8 @@ void rcs_lld_start(RCServoDriver *rcsp) {
  */
 void rcs_lld_stop(RCServoDriver *rcsp) {
 
-  if (rcsp->state == RCS_READY) {
+  (void) rcsp;
+  if (RCSD1.state == RCS_READY) {
     /* Clock deactivation.*/
 
   }
@@ -220,38 +195,41 @@ void rcs_lld_enable_channel(RCServoDriver *rcsp,
                             rcschannel_t channel,
                             rcswidth_t width) {
 
-  rcsp->widths[channel] = width;
+  (void) rcsp;
+  RCSD1.widths[channel] = width;
 }
 
 void rcs_lld_disable_channel(RCServoDriver *rcsp, rcschannel_t channel) {
 
-  rcsp->widths[channel] = 0;
+  (void) rcsp;
+  RCSD1.widths[channel] = 0;
 }
 
 void rcs_lld_sync(RCServoDriver *rcsp) {
   RCServoStep *steps;
   uint16_t i, len;
 
-  if (rcsp->next_sfirst != NULL)
+  (void) rcsp;
+  if (RCSD1.next_sfirst != NULL)
     return; // TODO error
 
-  steps = (rcsp->sfirst == rcsp->steps[0]) ? rcsp->steps[1] : rcsp->steps[0];
+  steps = (RCSD1.sfirst == RCSD1.steps[0]) ? RCSD1.steps[1] : RCSD1.steps[0];
 
   for (i = 0, len = 0; i < RCS_CHANNELS; i++) {
     RCServoStep *p;
     uint16_t l, u, idx;
-    uint16_t gpio = rcsp->config->channels[i].gpio;
-    uint16_t mask = rcsp->config->channels[i].mask;
-    rcscnt_t pw = rcsp->widths[i];
+    uint16_t gpio = RCSD1.config->channels[i].gpio;
+    uint16_t mask = RCSD1.config->channels[i].mask;
+    rcscnt_t pw = RCSD1.widths[i];
 
     /* skip if disabled */
     if (pw == 0) {
-      rcsp->enabled[gpio] &= ~mask;
+      RCSD1.enabled[gpio] &= ~mask;
       continue;
     }
 
     /* enable */
-    rcsp->enabled[gpio] |= mask;
+    RCSD1.enabled[gpio] |= mask;
 
     /* bsearch width blackjack and hookers */
     l = 0;
@@ -268,7 +246,7 @@ void rcs_lld_sync(RCServoDriver *rcsp) {
     }
 
     if (l < u)
-      /* step founded */
+      /* step exists */
       p->clrmask[gpio] |= mask;
     else {
       /* insert new step */
@@ -282,8 +260,8 @@ void rcs_lld_sync(RCServoDriver *rcsp) {
   }
 
   /* set next buffer for interrupt */
-  rcsp->next_sfirst = steps;
-  rcsp->next_slast = steps + len - 1;
+  RCSD1.next_sfirst = steps;
+  RCSD1.next_slast = steps + len - 1;
 }
 
 #endif /* RHAL_USE_RCSERVO */

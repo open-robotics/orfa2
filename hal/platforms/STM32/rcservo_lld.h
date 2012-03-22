@@ -62,15 +62,6 @@
 /*===========================================================================*/
 
 /**
- * @brief   RCSD2 driver enable switch.
- * @details If set to @p TRUE the support for RCSD2 is included.
- * @note    The default is @p TRUE.
- */
-#if !defined(STM32_RCS_USE_TIM2) || defined(__DOXYGEN__)
-#define STM32_RCS_USE_TIM2                  TRUE
-#endif
-
-/**
  * @brief   RCSD2 interrupt priority level setting.
  */
 #if !defined(STM32_RCS_TIM2_IRQ_PRIORITY) || defined(__DOXYGEN__)
@@ -81,12 +72,8 @@
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
 
-#if STM32_RCS_USE_TIM2 && !STM32_HAS_TIM2
+#if !STM32_HAS_TIM2
 #error "TIM2 not present in the selected device"
-#endif
-
-#if !STM32_RCS_USE_TIM2
-#error "RC Servo driver activated but no TIM peripheral assigned"
 #endif
 
 /*===========================================================================*/
@@ -139,8 +126,6 @@ struct RCServoDriver {
    */
   const RCServoConfig       *config;
   /* End of the mandatory fields.*/
-  TIM_TypeDef               *tim;
-  GPIO_TypeDef              *gpio[RCS_GPIOS];
   ioportmask_t              enabled[RCS_GPIOS];
   rcswidth_t                widths[RCS_CHANNELS];
 
@@ -155,13 +140,15 @@ struct RCServoDriver {
 
 #define RCS_CHANNEL(gpio, pin) { RCS_##gpio, 1<<pin }
 
+#define rcs_lld_get_width(rcsp, channel) \
+	((rcsp)->widths[(channel)])
+
 /*===========================================================================*/
 /* External declarations.                                                    */
 /*===========================================================================*/
 
-#if STM32_RCS_USE_TIM2 || defined(__DOXYGEN__)
-extern RCServoDriver RCSD2;
-#endif
+extern RCServoDriver RCSD1;
+extern const RCServoConfig rcs_default_config;
 
 #ifdef __cplusplus
 extern "C" {

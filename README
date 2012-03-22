@@ -18,8 +18,7 @@ Build
 
 Build requires gcc cross toolchain for ARM, ChibiOS/RT trunk.
 
-mkdir orfa2 && cd orfa2
-svn co https://chibios.svn.sourceforge.net/svnroot/chibios/trunk chibios
 git clone git://github.com/open-robotics/orfa.git
 cd orfa
+svn co https://chibios.svn.sourceforge.net/svnroot/chibios/trunk chibios
 make

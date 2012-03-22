@@ -2,14 +2,17 @@
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
                  2011 Giovanni Di Sirio.
 
-    This file is part of ChibiOS/RT.
+	ORFA2 - Copyright (C) 2012 Vladimir Ermakov.
 
-    ChibiOS/RT is free software; you can redistribute it and/or modify
+    This file is part of ORFA2.
+	Based on STM32/pwm_lld.h from ChibiOS/RT written by Giovanni Di Sirio.
+
+    ORFA2 is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 3 of the License, or
     (at your option) any later version.
 
-    ChibiOS/RT is distributed in the hope that it will be useful,
+    ORFA2 is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
@@ -19,7 +22,7 @@
 */
 
 /**
- * @file    templates/rcs_lld.h
+ * @file    STM32/rcservo_lld.h
  * @brief   RCServo Driver subsystem low level driver header template.
  *
  * @addtogroup RCServo

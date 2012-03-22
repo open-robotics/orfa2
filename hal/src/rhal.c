@@ -2,14 +2,16 @@
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
                  2011 Giovanni Di Sirio.
 
-    This file is part of ChibiOS/RT.
+	ORFA2 - Copyright (C) 2012 Vladimir Ermakov.
 
-    ChibiOS/RT is free software; you can redistribute it and/or modify
+    This file is part of ORFA2 (dereived from ChibiOS/RT hal.c).
+
+    ORFA2 is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 3 of the License, or
     (at your option) any later version.
 
-    ChibiOS/RT is distributed in the hope that it will be useful,
+    ORFA2 is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
@@ -22,12 +24,11 @@
  * @file    rhal.c
  * @brief   ORFA HAL subsystem code.
  *
- * @addtogroup HAL
+ * @addtogroup RHAL
  * @{
  */
 
 #include "ch.h"
-#include "hal.h"
 #include "rhal.h"
 
 /*===========================================================================*/
@@ -53,15 +54,12 @@
 /**
  * @brief   oRfa HAL initialization.
  * @details This function invokes the low level initialization code then
- *          initializes all the drivers enabled in the HAL. Finally the
- *          board-specific initialization is performed by invoking
- *          @p boardInit() (usually defined in @p board.c).
- *
+ *          initializes all the drivers enabled in the RHAL.
  * @init
  */
 void rhalInit(void) {
 
-#if HAL_USE_RCSERVO || defined(__DOXYGEN__)
+#if RHAL_USE_RCSERVO || defined(__DOXYGEN__)
   rcsInit();
 #endif
 }

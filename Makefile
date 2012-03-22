@@ -59,7 +59,7 @@ PROJECT = orfa2
 
 # Imported source files and paths
 ORFA    ?= .
-CHIBIOS ?= ./chibios
+CHIBIOS ?= $(ORFA)/ext/chibios
 include $(ORFA)/boards/OR_STM32_DS/board.mk
 include $(CHIBIOS)/os/hal/platforms/STM32F1xx/platform.mk
 include $(CHIBIOS)/os/hal/hal.mk

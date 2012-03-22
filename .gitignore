@@ -1,5 +1,5 @@
 *.swp
 .dep/*
 build/*
-chibios/*
+ext/chibios/*
 core

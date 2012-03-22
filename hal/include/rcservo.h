@@ -29,7 +29,7 @@
 #ifndef _RCSERVO_H_
 #define _RCSERVO_H_
 
-#if HAL_USE_RCSERVO || defined(__DOXYGEN__)
+#if RHAL_USE_RCSERVO || defined(__DOXYGEN__)
 
 /*===========================================================================*/
 /* Driver constants.                                                         */
@@ -82,7 +82,7 @@ extern "C" {
 }
 #endif
 
-#endif /* HAL_USE_RCSERVO */
+#endif /* RHAL_USE_RCSERVO */
 
 #endif /* _RCSERVO_H_ */
 

@@ -26,8 +26,8 @@
  * @{
  */
 
-#ifndef _OHAL_H_
-#define _OHAL_H_
+#ifndef _RHAL_H_
+#define _RHAL_H_
 
 #include "hal.h"
 
@@ -40,7 +40,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  void ohalInit(void);
+  void rhalInit(void);
 #ifdef __cplusplus
 }
 #endif

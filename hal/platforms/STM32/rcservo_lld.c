@@ -27,10 +27,10 @@
  */
 
 #include "ch.h"
-#include "ohal.h"
+#include "rhal.h"
 #include <string.h>
 
-#if HAL_USE_RCSERVO || defined(__DOXYGEN__)
+#if RHAL_USE_RCSERVO || defined(__DOXYGEN__)
 
 /*===========================================================================*/
 /* Driver local definitions.                                                 */
@@ -283,6 +283,6 @@ void rcs_lld_sync(RCServoDriver *rcsp) {
   rcsp->next_slast = steps + len - 1;
 }
 
-#endif /* HAL_USE_RCSERVO */
+#endif /* RHAL_USE_RCSERVO */
 
 /** @} */

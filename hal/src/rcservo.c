@@ -28,9 +28,9 @@
 
 #include "ch.h"
 #include "hal.h"
-#include "ohal.h"
+#include "rhal.h"
 
-#if HAL_USE_RCSERVO || defined(__DOXYGEN__)
+#if RHAL_USE_RCSERVO || defined(__DOXYGEN__)
 
 /*===========================================================================*/
 /* Driver local definitions.                                                 */
@@ -187,6 +187,6 @@ void rcsSync(RCServoDriver *rcsp) {
   //chSysUnlock();
 }
 
-#endif /* HAL_USE_RCSERVO */
+#endif /* RHAL_USE_RCSERVO */
 
 /** @} */

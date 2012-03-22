@@ -19,7 +19,7 @@
 */
 
 #include "ch.h"
-#include "ohal.h"
+#include "rhal.h"
 #include "chprintf.h"
 #include "servo.h"
 #include "ssc32.h"
@@ -55,7 +55,7 @@ int main(void) {
    *   RTOS is active.
    */
   halInit();
-  ohalInit();
+  rhalInit();
   chSysInit();
 
   sdStart(&SD1, NULL);

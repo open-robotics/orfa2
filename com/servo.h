@@ -3,7 +3,7 @@
 #define CSERVO_H
 
 #include "ch.h"
-#include "ohal.h"
+#include "rhal.h"
 
 typedef struct servo_msg {
 	uint8_t		channel;

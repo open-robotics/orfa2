@@ -160,8 +160,8 @@
 #define HAL_USE_USB                 FALSE
 #endif
 
-#if !defined(HAL_USE_RCSERVO) || defined(__DOXYGEN__)
-#define HAL_USE_RCSERVO             TRUE
+#if !defined(RHAL_USE_RCSERVO) || defined(__DOXYGEN__)
+#define RHAL_USE_RCSERVO             TRUE
 #endif
 
 /*===========================================================================*/

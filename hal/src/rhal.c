@@ -19,7 +19,7 @@
 */
 
 /**
- * @file    ohal.c
+ * @file    rhal.c
  * @brief   ORFA HAL subsystem code.
  *
  * @addtogroup HAL
@@ -28,7 +28,7 @@
 
 #include "ch.h"
 #include "hal.h"
-#include "ohal.h"
+#include "rhal.h"
 
 /*===========================================================================*/
 /* Driver local definitions.                                                 */
@@ -51,7 +51,7 @@
 /*===========================================================================*/
 
 /**
- * @brief   HAL initialization.
+ * @brief   oRfa HAL initialization.
  * @details This function invokes the low level initialization code then
  *          initializes all the drivers enabled in the HAL. Finally the
  *          board-specific initialization is performed by invoking
@@ -59,7 +59,7 @@
  *
  * @init
  */
-void ohalInit(void) {
+void rhalInit(void) {
 
 #if HAL_USE_RCSERVO || defined(__DOXYGEN__)
   rcsInit();

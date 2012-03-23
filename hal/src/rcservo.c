@@ -30,6 +30,7 @@
 
 #include "ch.h"
 #include "rhal.h"
+#include <string.h>
 
 #if RHAL_USE_RCSERVO || defined(__DOXYGEN__)
 

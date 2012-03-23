@@ -2,8 +2,8 @@
 #
 #
 
-TARGET_BOARD	?= OR_STM32F1_DS
-#TARGET_BOARD	?= simulator
+TARGET_CONFIG	?= OR_STM32F1_DS
+#TARGET_CONFIG	?= simulator
 
 ORFA	?= .
 
@@ -11,6 +11,6 @@ CSRC = $(COMSRC) $(SHSRC) main.c
 
 CPPSRC =
 
-INCDIR = $(ORFA)/configs/$(TARGET_BOARD) $(COMINC) $(SHINC)
+INCDIR = $(ORFA)/configs/$(TARGET_CONFIG) $(COMINC) $(SHINC)
 
-include $(ORFA)/configs/$(TARGET_BOARD)/Makefile.inc
+include $(ORFA)/configs/$(TARGET_CONFIG)/Makefile.inc

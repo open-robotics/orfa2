@@ -32,9 +32,9 @@ static msg_t Thread1(void *arg) {
   (void)arg;
   chRegSetThreadName("blinker");
   while (TRUE) {
-    palClearPad(GPIOB, GPIOB_LED);
+    //palClearPad(GPIOB, GPIOB_LED);
     chThdSleepMilliseconds(500);
-    palSetPad(GPIOB, GPIOB_LED);
+    //palSetPad(GPIOB, GPIOB_LED);
     chThdSleepMilliseconds(500);
   }
 
@@ -66,11 +66,7 @@ int main(void) {
    */
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
-  /*
-   * Normal main() thread activity, in this demo it does nothing except
-   * sleeping in a loop and check the button state.
-   */
-  while (TRUE) {
+  while (!chThdShouldTerminate()) {
 	chprintf((struct BaseChannel*)&SD1, "starting SSC32 Sync!\r\n");
 	shSsc32Sync((struct BaseChannel*)&SD1, 0, NULL);
 	chprintf((struct BaseChannel*)&SD1, "shSsc32Sync terminated!\r\n");

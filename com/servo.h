@@ -9,10 +9,11 @@ typedef struct servo_msg {
 	uint8_t		channel;
 	uint16_t	width;
 	uint16_t	speed;
+	uint16_t	time;
 } servo_msg_t;
 
-#define SERVO_TIME_CH	UINT8_MAX
-#define SERVO_EVT_DONE	1
+#define SERVO_SPEED_MAX	UINT16_MAX
+#define SERVO_TIME_MAX	UINT16_MAX
 
 extern BaseAsynchronousChannel servo_cmd;
 

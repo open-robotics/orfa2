@@ -3,15 +3,15 @@
 #include "chprintf.h"
 #include <string.h>
 
-#define ITERATION_STEP 10
+#define ITERATION_STEP_MS 10
 #define debug(...) chprintf((struct BaseChannel*)&SD1, __VA_ARGS__)
 
 static VirtualTimer vtmr;
 
-static rcswidth_t start_width[RCS_CHANNELS];
-static rcswidth_t target_width[RCS_CHANNELS];
-static systime_t total_time[RCS_CHANNELS];
-static systime_t time_left[RCS_CHANNELS];
+static rcswidth_t start_width[RCS_CHANNELS]; /* usec */
+static rcswidth_t target_width[RCS_CHANNELS]; /* usec */
+static systime_t total_time[RCS_CHANNELS]; /* msec */
+static systime_t time_left[RCS_CHANNELS]; /* msec */
 static bool_t endq_reported;
 
 static void vtmr_func(void *p)
@@ -24,11 +24,11 @@ static void vtmr_func(void *p)
 			updated = TRUE;
 			endq_reported = FALSE;
 
-			if (time_left[i] <= ITERATION_STEP) {
+			if (time_left[i] <= ITERATION_STEP_MS) {
 				time_left[i] = 0;
 				tmp = target_width[i];
 			} else {
-				time_left[i] -= ITERATION_STEP;
+				time_left[i] -= ITERATION_STEP_MS;
 				tmp = start_width[i];
 				tmp -= target_width[i];
 				tmp *= time_left[i];
@@ -43,78 +43,82 @@ static void vtmr_func(void *p)
 
 	if (!updated && !endq_reported) {
 		endq_reported = TRUE;
-		// TODO send event
+		/* TODO send event */
 	}
 
-	chVTSetI(&vtmr, MS2ST(ITERATION_STEP), vtmr_func, p);
+	chVTSetI(&vtmr, MS2ST(ITERATION_STEP_MS), vtmr_func, p);
 }
 
-static size_t writet(void *ip, uint8_t *bp, size_t n, systime_t time)
+static size_t writet(void *ip, const uint8_t *bp, size_t n, systime_t time)
 {
-	// TODO: simplyfiy it
-
-	rcswidth_t target[RCS_CHANNELS];
-	unsigned max_speed[RCS_CHANNELS];
+	size_t msg_cnt = 0, tr_n = 0;
 	systime_t max_time = 0;
-	servo_msg_t *data = (servo_msg_t *)bp;
-	size_t tr_n = 0;
+	servo_msg_t *data = (servo_msg_t *) bp;
 
-	if (n < sizeof(servo_msg_t)) {
+	(void) ip;
+	(void) time;
+	if (n < sizeof(servo_msg_t))
 		return 0;
-	}
 
-	debug("servo writet(ip, bp, %d, t)\r\n", n);
-
-	memset(&target, 0, sizeof(target));
-	memset(&max_speed, 0, sizeof(max_speed));
+	debug("servo_cmd->writet(ip, p, %u, t)\r\n", n);
 
 	while (n >= sizeof(servo_msg_t)) {
-		if (data->channel == SERVO_TIME_CH)
-			max_time = data->speed;
-		else if (data->channel < RCS_CHANNELS) {
-			target[data->channel] = data->width;
-			max_speed[data->channel] = data->speed;
-		}
-		tr_n += sizeof(servo_msg_t);
-		n -= sizeof(servo_msg_t);
-		data++;
-	}
+		if (data->channel < RCS_CHANNELS && data->width != 0) {
+			unsigned dx;
+			unsigned pos = rcsGetWidth(&RCSD1, data->channel);
 
-	debug("tr_n %d\r\n", tr_n);
-
-	for (unsigned i = 0; i < RCS_CHANNELS; i++)
-		if (target[i] != 0 && max_speed[i] != 0) {
-			unsigned dx = 0;
-			unsigned pos = rcsGetWidth(&RCSD1, i);
-			if (target[i] > pos)
-				dx = target[i] - pos;
+			if (data->width > pos)
+				dx = data->width - pos;
 			else
-				dx = pos - target[i];
-			dx = (dx * 1000) / max_speed[i];
+				dx = pos - data->width;
+
+			if (data->speed != 0) {
+				dx = (dx * 1000) / data->speed;
+				if (dx < data->time)
+					dx = data->time;
+			}
+			else
+				dx = data->time;
+
 			if (dx > max_time)
 				max_time = dx;
 		}
 
-	if (max_time < ITERATION_STEP)
-		max_time = ITERATION_STEP;
+		tr_n += sizeof(servo_msg_t);
+		n -= sizeof(servo_msg_t);
+		msg_cnt++;
+		data++;
+	}
 
-	debug("time2go %d\r\n", max_time);
+	if (max_time < ITERATION_STEP_MS)
+		max_time = ITERATION_STEP_MS;
 
-	for (unsigned i = 0; i < RCS_CHANNELS; i++)
-		if (target[i] != 0) {
-			unsigned pos = rcsGetWidth(&RCSD1, i);
-			debug("s[%d]: %d -> %d\r\n", i, pos, target_width[i]);
-			start_width[i] = pos;
-			target_width[i] = target[i];
-			total_time[i] = max_time;
-			time_left[i] = max_time;
+	for (data = (servo_msg_t *) bp;
+			msg_cnt > 0; msg_cnt--, data++) {
+		if (data->channel < RCS_CHANNELS && data->width != 0) {
+			rcswidth_t pos = rcsGetWidth(&RCSD1, data->channel);
+
+			/* TODO add mutex */
+			start_width[data->channel] = pos;
+			target_width[data->channel] = data->width;
+			total_time[data->channel] = max_time;
+			time_left[data->channel] = max_time;
+
+			debug("servo[%d]: %d -> %d, %d ms\r\n", data->channel,
+					pos, data->width, max_time);
 		}
+	}
 
 	return tr_n;
 }
 
 static size_t readt(void *ip, uint8_t *bp, size_t n, systime_t time)
 {
+	(void) ip;
+	(void) bp;
+	(void) n;
+	(void) time;
+
 	return 0;
 }
 
@@ -124,12 +128,6 @@ static ioflags_t getflags(void *ip)
 }
 
 static struct BaseAsynchronousChannelVMT vmt = {
-	.write = NULL,
-	.read = NULL,
-	.putwouldblock = NULL,
-	.getwouldblock = NULL,
-	.put = NULL,
-	.get = NULL,
 	.writet = writet,
 	.readt = readt,
 	.getflags = getflags
@@ -148,6 +146,6 @@ void servoInit()
 	servo_cmd.flags = IO_NO_ERROR;
 
 	chSysLock();
-	chVTSetI(&vtmr, MS2ST(ITERATION_STEP), vtmr_func, &servo_cmd);
+	chVTSetI(&vtmr, MS2ST(ITERATION_STEP_MS), vtmr_func, &servo_cmd);
 	chSysUnlock();
 }

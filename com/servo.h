@@ -15,7 +15,11 @@ typedef struct servo_msg {
 #define SERVO_SPEED_MAX	UINT16_MAX
 #define SERVO_TIME_MAX	UINT16_MAX
 
+#define SERVO_QUERY_DONE	FALSE
+#define SERVO_QUERY_IN_PROGRESS	TRUE
+
 extern BaseAsynchronousChannel servo_cmd;
+extern bool_t servo_query_status;
 
 extern void servoInit();
 

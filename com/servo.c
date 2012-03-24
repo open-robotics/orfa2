@@ -23,6 +23,7 @@ static void vtmr_func(void *p)
 		if (time_left[i] > 0) {
 			updated = TRUE;
 			endq_reported = FALSE;
+			servo_query_status = SERVO_QUERY_IN_PROGRESS;
 
 			if (time_left[i] <= ITERATION_STEP_MS) {
 				time_left[i] = 0;
@@ -43,6 +44,7 @@ static void vtmr_func(void *p)
 
 	if (!updated && !endq_reported) {
 		endq_reported = TRUE;
+		servo_query_status = SERVO_QUERY_DONE;
 		/* TODO send event */
 	}
 
@@ -136,6 +138,7 @@ static struct BaseAsynchronousChannelVMT vmt = {
 /* public */
 
 BaseAsynchronousChannel servo_cmd;
+bool_t servo_query_status;
 
 void servoInit()
 {

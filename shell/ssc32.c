@@ -14,10 +14,19 @@ void shSsc32Sync(BaseChannel *chp, int argc, char *argv[])
 		S_POS,
 		S_SPEED,
 		S_TIME,
+		S_QUERY,
+		S_QUERY_POS,
 		S_COMMIT,
 	} state = S_UNK, last_state = S_UNK;
-	servo_msg_t msgs[RCS_CHANNELS + 1];
-	size_t msgs_len = 0;
+	enum {
+		M_MOVE,
+		M_QUERY
+	} mode = M_MOVE;
+	union {
+		servo_msg_t msgs[RCS_CHANNELS + 1];
+		rcschannel_t query_ch[RCS_CHANNELS + 1];
+	} d;
+	size_t i, msgs_len = 0;
 	int accu = 0;
 
 	while (!chThdShouldTerminate()) {
@@ -34,7 +43,10 @@ void shSsc32Sync(BaseChannel *chp, int argc, char *argv[])
 			break;
 
 		case 'P':
-			state = S_POS;
+			if (mode == M_MOVE)
+				state = S_POS;
+			else
+				state = S_QUERY_POS;
 			break;
 
 		case 'S':
@@ -43,6 +55,11 @@ void shSsc32Sync(BaseChannel *chp, int argc, char *argv[])
 
 		case 'T':
 			state = S_TIME;
+			break;
+
+		case 'Q':
+			state = S_QUERY;
+			mode = M_QUERY;
 			break;
 
 		case '0':
@@ -75,22 +92,26 @@ void shSsc32Sync(BaseChannel *chp, int argc, char *argv[])
 		if (last_state != state && state != S_UNK) {
 			switch (last_state) {
 			case S_CH:
-				msgs[++msgs_len].channel = accu;
-				msgs[msgs_len].width = 0;
-				msgs[msgs_len].speed = 0;
-				msgs[msgs_len].time = 0;
+				d.msgs[++msgs_len].channel = accu;
+				d.msgs[msgs_len].width = 0;
+				d.msgs[msgs_len].speed = 0;
+				d.msgs[msgs_len].time = 0;
 				break;
 
 			case S_POS:
-				msgs[msgs_len].width = accu;
+				d.msgs[msgs_len].width = accu;
 				break;
 
 			case S_SPEED:
-				msgs[msgs_len].speed = accu;
+				d.msgs[msgs_len].speed = accu;
 				break;
 
 			case S_TIME:
-				msgs[msgs_len].time = accu;
+				d.msgs[msgs_len].time = accu;
+				break;
+
+			case S_QUERY_POS:
+				d.query_ch[++msgs_len] = accu;
 				break;
 
 			default:
@@ -100,21 +121,25 @@ void shSsc32Sync(BaseChannel *chp, int argc, char *argv[])
 		}
 
 		if (state == S_COMMIT) {
-			chprintf(chp, "commit\n");
-			for (size_t i=1; i < msgs_len + 1; i++) {
-				chprintf(chp, "msg[%d]: ch=%d pw=%d sp=%d tm=%d\n",
-						i,
-						msgs[i].channel, msgs[i].width,
-						msgs[i].speed, msgs[i].time
-						);
+			if (mode == M_MOVE) {
+				chIOWriteTimeout(&servo_cmd, (const uint8_t *)&d.msgs[1],
+						sizeof(servo_msg_t) * msgs_len, TIME_INFINITE);
 			}
-
-			chIOWriteTimeout(&servo_cmd, (const uint8_t *)&msgs[1],
-					sizeof(servo_msg_t) * msgs_len, TIME_INFINITE);
+			else { /* mode == M_QUERY */
+				if (msgs_len) { /* QP<ch> */
+					for (i = 1; i <= msgs_len; i++)
+						chIOPut(chp, (d.query_ch[i] < RCS_CHANNELS)?
+								rcsGetWidth(&RCSD1, d.query_ch[i]) / 10 : 0);
+				}
+				else
+					chIOPut(chp, (servo_query_status == SERVO_QUERY_DONE)?
+							'.' : '+');
+			}
 
 			accu = 0;
 			msgs_len = 0;
 			state = S_UNK;
+			mode = M_MOVE;
 		}
 
 		last_state = state;

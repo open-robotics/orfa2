@@ -1,4 +1,7 @@
 
+#include <string.h>
+#include <stdlib.h>
+
 #include "ssc32.h"
 #include "chprintf.h"
 
@@ -16,16 +19,14 @@ void shSsc32Sync(BaseChannel *chp, int argc, char *argv[])
 	servo_msg_t msgs[RCS_CHANNELS + 1];
 	size_t msgs_len = 0;
 	int accu = 0;
-	bool_t time = FALSE;
 
-	msgs[0].width = 0;
-	msgs[0].channel = 255; // XXX
-
-	while (TRUE) {
+	while (!chThdShouldTerminate()) {
 		c = chIOGet(chp);
-		chIOPut(chp, c);
+		/*chIOPut(chp, c);*/
 		if (c == '\03') // ^C
 			return;
+
+		c = toupper(c);
 
 		switch (c) {
 		case '#':
@@ -42,7 +43,6 @@ void shSsc32Sync(BaseChannel *chp, int argc, char *argv[])
 
 		case 'T':
 			state = S_TIME;
-			time = TRUE;
 			break;
 
 		case '0':
@@ -56,6 +56,10 @@ void shSsc32Sync(BaseChannel *chp, int argc, char *argv[])
 		case '8':
 		case '9':
 			accu = (accu * 10) + (c - '0');
+			break;
+
+		case ' ':
+		case '\t':
 			break;
 
 		case '\r':
@@ -72,6 +76,9 @@ void shSsc32Sync(BaseChannel *chp, int argc, char *argv[])
 			switch (last_state) {
 			case S_CH:
 				msgs[++msgs_len].channel = accu;
+				msgs[msgs_len].width = 0;
+				msgs[msgs_len].speed = 0;
+				msgs[msgs_len].time = 0;
 				break;
 
 			case S_POS:
@@ -83,26 +90,28 @@ void shSsc32Sync(BaseChannel *chp, int argc, char *argv[])
 				break;
 
 			case S_TIME:
-				chprintf(chp, "time: %d\n", accu);
-				msgs[0].width = 0;
-				msgs[0].channel = 255; // XXX
-				msgs[0].speed = accu;
+				msgs[msgs_len].time = accu;
+				break;
+
+			default:
 				break;
 			}
 			accu = 0;
-			chprintf(chp, "msg[%d]: ch=%d pw=%d sp=%d\n",
-					msgs_len,
-					msgs[msgs_len].channel,
-					msgs[msgs_len].width,
-					msgs[msgs_len].speed);
 		}
 
 		if (state == S_COMMIT) {
 			chprintf(chp, "commit\n");
-			chIOWriteTimeout(&servo_cmd, (time)? msgs : &msgs[1],
-					(time)? sizeof(servo_msg_t) * msgs_len + 1 : sizeof(servo_msg_t) * msgs_len,
-					TIME_INFINITE);
-			time = FALSE;
+			for (size_t i=1; i < msgs_len + 1; i++) {
+				chprintf(chp, "msg[%d]: ch=%d pw=%d sp=%d tm=%d\n",
+						i,
+						msgs[i].channel, msgs[i].width,
+						msgs[i].speed, msgs[i].time
+						);
+			}
+
+			chIOWriteTimeout(&servo_cmd, (const uint8_t *)&msgs[1],
+					sizeof(servo_msg_t) * msgs_len, TIME_INFINITE);
+
 			accu = 0;
 			msgs_len = 0;
 			state = S_UNK;

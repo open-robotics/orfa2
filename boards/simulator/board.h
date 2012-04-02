@@ -21,6 +21,9 @@
 #ifndef _BOARD_H_
 #define _BOARD_H_
 
+#define GPIOB		IOPORT1
+#define GPIOB_LED	1
+
 #if !defined(_FROM_ASM_)
 #ifdef __cplusplus
 extern "C" {

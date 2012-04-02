@@ -23,4 +23,17 @@ extern bool_t servo_query_status;
 
 extern void servoInit();
 
+static inline size_t servoCommandOne(uint8_t channel, uint16_t width,
+		uint16_t speed, uint16_t time)
+{
+	servo_msg_t msg = {
+		.channel = channel,
+		.width = width,
+		.speed = speed,
+		.time = time
+	};
+
+	return chIOWriteTimeout(&servo_cmd, (uint8_t *)&msg, sizeof(msg), TIME_INFINITE);
+}
+
 #endif /* CSERVO_H */

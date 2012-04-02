@@ -3,7 +3,7 @@
 #include "chprintf.h"
 #include <string.h>
 
-#define ITERATION_STEP_MS 10
+#define ITERATION_STEP_MS 20
 #define debug(...) chprintf((struct BaseChannel*)&SD1, __VA_ARGS__)
 
 static VirtualTimer vtmr;
@@ -17,9 +17,9 @@ static bool_t endq_reported;
 static void vtmr_func(void *p)
 {
 	bool_t updated = FALSE;
-	signed tmp;
+	int tmp;
 
-	for (unsigned i = 0; i < RCS_CHANNELS; i++)
+	for (size_t i = 0; i < RCS_CHANNELS; i++)
 		if (time_left[i] > 0) {
 			updated = TRUE;
 			endq_reported = FALSE;
@@ -30,11 +30,10 @@ static void vtmr_func(void *p)
 				tmp = target_width[i];
 			} else {
 				time_left[i] -= ITERATION_STEP_MS;
-				tmp = start_width[i];
-				tmp -= target_width[i];
-				tmp *= time_left[i];
-				tmp /= total_time[i];
-				tmp += target_width[i];
+				tmp = target_width[i] +
+					  (((int)start_width[i] - (int)target_width[i])
+					   * (int)time_left[i]
+					   / (int)total_time[i]);
 			}
 			rcsEnableChannel(&RCSD1, i, tmp);
 		}

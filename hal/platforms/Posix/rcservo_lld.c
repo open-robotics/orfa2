@@ -32,6 +32,8 @@
 #include "ch.h"
 #include "rhal.h"
 #include <string.h>
+#include <stdio.h>
+#include <sys/time.h>
 
 #if RHAL_USE_RCSERVO || defined(__DOXYGEN__)
 
@@ -117,8 +119,16 @@ void rcs_lld_disable_channel(RCServoDriver *rcsp, rcschannel_t channel) {
 }
 
 void rcs_lld_sync(RCServoDriver *rcsp) {
+  int i;
+  struct timeval tv;
 
   (void) rcsp;
+  gettimeofday(&tv, NULL);
+  printf("%d.%d rcsSync:", tv.tv_sec, tv.tv_usec);
+  for (i = 0; i < RCS_CHANNELS; i++)
+    if (RCSD1.widths[i] > 0)
+      printf(" %d:%d", i, RCSD1.widths[i]);
+  printf("\n");
 }
 
 #endif /* RHAL_USE_RCSERVO */

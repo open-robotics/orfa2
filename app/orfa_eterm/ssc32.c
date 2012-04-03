@@ -111,7 +111,7 @@ static bool_t ssc32_query_cb(BaseChannel *chp, char c, bool_t reinit)
 			chprintf(chp, "ERROR: invalid Q command\n");
 			return TRUE;
 		}
-		return FALSE
+		return FALSE;
 	}
 
 	if (chan_len == 0) {

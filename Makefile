@@ -7,10 +7,10 @@ TARGET_CONFIG	?= OR_STM32F1_DS
 
 ORFA	?= .
 
-CSRC = $(COMSRC) $(SHSRC) main.c
+CSRC = $(LIBSRC) $(APPSRC) main.c
 
 CPPSRC =
 
-INCDIR = $(ORFA)/configs/$(TARGET_CONFIG) $(COMINC) $(SHINC)
+INCDIR = $(ORFA)/configs/$(TARGET_CONFIG) $(LIBINC) $(APPINC)
 
 include $(ORFA)/configs/$(TARGET_CONFIG)/Makefile.inc

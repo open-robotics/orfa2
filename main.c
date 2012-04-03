@@ -21,7 +21,7 @@
 #include "rhal.h"
 #include "chprintf.h"
 #include "servo.h"
-#include "ssc32.h"
+#include "eterm.h"
 
 /*
  * Red LED blinker thread, times are in milliseconds.
@@ -67,9 +67,7 @@ int main(void) {
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
   while (!chThdShouldTerminate()) {
-	chprintf((struct BaseChannel*)&SD1, "starting SSC32 Sync!\r\n");
-	shSsc32Sync((struct BaseChannel*)&SD1, 0, NULL);
-	chprintf((struct BaseChannel*)&SD1, "shSsc32Sync terminated!\r\n");
+	appEterm((struct BaseChannel*)&SD1, 0, NULL);
     chThdSleepMilliseconds(200);
   }
 

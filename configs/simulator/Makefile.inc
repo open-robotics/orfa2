@@ -6,7 +6,7 @@
 
 # Compiler options here.
 ifeq ($(USE_OPT),)
-  USE_OPT = -std=gnu99 -O2 -ggdb -fomit-frame-pointer
+  USE_OPT = -std=gnu99 -O0 -ggdb -fomit-frame-pointer
 endif
 
 # C specific options here (added to USE_OPT).
@@ -50,8 +50,8 @@ include ${CHIBIOS}/os/ports/GCC/SIMIA32/port.mk
 include ${CHIBIOS}/os/kernel/kernel.mk
 include $(ORFA)/hal/platforms/Posix/platform.mk
 include $(ORFA)/hal/hal.mk
-include $(ORFA)/com/com.mk
-include $(ORFA)/shell/shell.mk
+include $(ORFA)/lib/lib.mk
+include $(ORFA)/app/apps.mk
 
 # Define linker script file here
 LDSCRIPT=

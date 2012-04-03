@@ -1,10 +1,11 @@
 
 #include "servo.h"
-#include "chprintf.h"
-#include <string.h>
 
 #define ITERATION_STEP_MS 20
-#define debug(...) chprintf((struct BaseChannel*)&SD1, __VA_ARGS__)
+
+bool_t servo_query_status;
+
+/* Private */
 
 static VirtualTimer vtmr;
 
@@ -50,20 +51,15 @@ static void vtmr_func(void *p)
 	chVTSetI(&vtmr, MS2ST(ITERATION_STEP_MS), vtmr_func, p);
 }
 
-static size_t writet(void *ip, const uint8_t *bp, size_t n, systime_t time)
+/* Public API */
+
+void servoCommand(servo_msg_t *msgs, size_t len)
 {
-	size_t msg_cnt = 0, tr_n = 0;
+	size_t i;
 	systime_t max_time = 0;
-	servo_msg_t *data = (servo_msg_t *) bp;
+	servo_msg_t *data;
 
-	(void) ip;
-	(void) time;
-	if (n < sizeof(servo_msg_t))
-		return 0;
-
-	debug("servo_cmd->writet(ip, p, %u, t)\r\n", n);
-
-	while (n >= sizeof(servo_msg_t)) {
+	for (i = 0, data = msgs; i < len; i++, data++) {
 		if (data->channel < RCS_CHANNELS && data->width != 0) {
 			unsigned dx;
 			unsigned pos = rcsGetWidth(&RCSD1, data->channel);
@@ -84,18 +80,12 @@ static size_t writet(void *ip, const uint8_t *bp, size_t n, systime_t time)
 			if (dx > max_time)
 				max_time = dx;
 		}
-
-		tr_n += sizeof(servo_msg_t);
-		n -= sizeof(servo_msg_t);
-		msg_cnt++;
-		data++;
 	}
 
 	if (max_time < ITERATION_STEP_MS)
 		max_time = ITERATION_STEP_MS;
 
-	for (data = (servo_msg_t *) bp;
-			msg_cnt > 0; msg_cnt--, data++) {
+	for (i = 0, data = msgs; i < len; i++, data++) {
 		if (data->channel < RCS_CHANNELS && data->width != 0) {
 			rcswidth_t pos = rcsGetWidth(&RCSD1, data->channel);
 
@@ -104,50 +94,16 @@ static size_t writet(void *ip, const uint8_t *bp, size_t n, systime_t time)
 			target_width[data->channel] = data->width;
 			total_time[data->channel] = max_time;
 			time_left[data->channel] = max_time;
-
-			debug("servo[%d]: %d -> %d, %d ms\r\n", data->channel,
-					pos, data->width, max_time);
 		}
 	}
-
-	return tr_n;
 }
 
-static size_t readt(void *ip, uint8_t *bp, size_t n, systime_t time)
-{
-	(void) ip;
-	(void) bp;
-	(void) n;
-	(void) time;
-
-	return 0;
-}
-
-static ioflags_t getflags(void *ip)
-{
-	_ch_get_and_clear_flags_impl(ip);
-}
-
-static struct BaseAsynchronousChannelVMT vmt = {
-	.writet = writet,
-	.readt = readt,
-	.getflags = getflags
-};
-
-/* public */
-
-BaseAsynchronousChannel servo_cmd;
-bool_t servo_query_status;
-
-void servoInit()
+void servoInit(void)
 {
 	rcsStart(&RCSD1, &rcs_default_config);
 
-	servo_cmd.vmt = &vmt;
-	chEvtInit(&servo_cmd.event);
-	servo_cmd.flags = IO_NO_ERROR;
-
 	chSysLock();
-	chVTSetI(&vtmr, MS2ST(ITERATION_STEP_MS), vtmr_func, &servo_cmd);
+	chVTSetI(&vtmr, MS2ST(ITERATION_STEP_MS), vtmr_func, NULL);
 	chSysUnlock();
 }
+

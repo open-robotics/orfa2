@@ -68,8 +68,8 @@ include $(CHIBIOS)/os/ports/GCC/ARMCMx/STM32F1xx/port.mk
 include $(CHIBIOS)/os/kernel/kernel.mk
 include $(ORFA)/hal/platforms/STM32/platform.mk
 include $(ORFA)/hal/hal.mk
-include $(ORFA)/com/com.mk
-include $(ORFA)/shell/shell.mk
+include $(ORFA)/lib/lib.mk
+include $(ORFA)/app/apps.mk
 
 # Define linker script file here
 LDSCRIPT= $(PORTLD)/STM32F103xE.ld

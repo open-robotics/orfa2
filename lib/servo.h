@@ -1,6 +1,6 @@
 
-#ifndef CSERVO_H
-#define CSERVO_H
+#ifndef LIB_SERVO_H
+#define LIB_SERVO_H
 
 #include "ch.h"
 #include "rhal.h"
@@ -18,12 +18,12 @@ typedef struct servo_msg {
 #define SERVO_QUERY_DONE	FALSE
 #define SERVO_QUERY_IN_PROGRESS	TRUE
 
-extern BaseAsynchronousChannel servo_cmd;
 extern bool_t servo_query_status;
 
-extern void servoInit();
+extern void servoInit(void);
+extern void servoCommand(servo_msg_t *msgs, size_t len);
 
-static inline size_t servoCommandOne(uint8_t channel, uint16_t width,
+static inline void servoCommandOne(uint8_t channel, uint16_t width,
 		uint16_t speed, uint16_t time)
 {
 	servo_msg_t msg = {
@@ -33,7 +33,7 @@ static inline size_t servoCommandOne(uint8_t channel, uint16_t width,
 		.time = time
 	};
 
-	return chIOWriteTimeout(&servo_cmd, (uint8_t *)&msg, sizeof(msg), TIME_INFINITE);
+	servoCommand(&msg, 1);
 }
 
-#endif /* CSERVO_H */
+#endif /* LIB_SERVO_H */

@@ -23,8 +23,8 @@
 */
 
 #include "ch.h"
-#include "hal.h"
 #include "rhal.h"
+#include "palmap.h"
 
 /**
  * @brief   PAL setup.
@@ -75,6 +75,34 @@ const RCServoConfig rcs_default_config =
 		}
 };
 #endif
+
+const struct palmap_pad_config palmap_pads[] =
+{
+	/* PORT A */
+	PM_PAD_ADC(GPIOA, GPIOA_A0, ADC_CHANNEL_IN3),
+	PM_PAD_ADC(GPIOA, GPIOA_A1, ADC_CHANNEL_IN2),
+	PM_PAD_ADC(GPIOA, GPIOA_A2, ADC_CHANNEL_IN1),
+	PM_PAD_ADC(GPIOA, GPIOA_A3, ADC_CHANNEL_IN0),
+	PM_PAD_ADC(GPIOC, GPIOC_A4, ADC_CHANNEL_IN13),
+	PM_PAD_ADC(GPIOC, GPIOC_A5, ADC_CHANNEL_IN12),
+	PM_PAD_ADC(GPIOC, GPIOC_A6, ADC_CHANNEL_IN11),
+	PM_PAD_ADC(GPIOC, GPIOC_A7, ADC_CHANNEL_IN10),
+	/* PORT D */
+	PM_PAD(GPIOB, GPIOB_D0),
+	PM_PAD(GPIOB, GPIOB_D1),
+	PM_PAD(GPIOB, GPIOB_D2),
+	PM_PAD(GPIOB, GPIOB_D3),
+	PM_PAD(GPIOD, GPIOD_D4),
+	PM_PAD(GPIOD, GPIOD_D5),
+	PM_PAD(GPIOD, GPIOD_D6),
+	PM_PAD(GPIOD, GPIOD_D7)
+};
+
+const struct palmap_port_config palmap_ports[] =
+{
+		{ 'A', 0 },
+		{ 'D', 8 }
+};
 
 /*
  * Early initialization code.

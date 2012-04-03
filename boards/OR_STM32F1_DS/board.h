@@ -254,6 +254,12 @@
  */
 #define usb_lld_disconnect_bus(usbp) (0) /*palSetPad(GPIOC, GPIOC_USB_DISC)*/
 
+/*
+ * PAL Map constants
+ */
+#define PALMAP_PADS_SIZE	16
+#define PALMAP_PORTS_SIZE	2
+
 #if !defined(_FROM_ASM_)
 #ifdef __cplusplus
 extern "C" {

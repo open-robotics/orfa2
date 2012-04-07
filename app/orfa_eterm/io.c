@@ -5,7 +5,6 @@
 #include "palmap.h"
 
 #define BUFSZ	32
-#define ADCSZ	8
 
 enum pin_mode {
 	IN,
@@ -16,31 +15,25 @@ enum pin_mode {
 static char buf[BUFSZ];
 static char *p;
 
-static bool_t adc_raw_out = FALSE;
 static enum pin_mode pin_modes[PALMAP_PADS_SIZE];
-static adcsample_t adc_samples[ADCSZ];
-static uint16_t adc_pad[ADCSZ];
+static bool_t adc_raw_out = FALSE;
 
 
-static inline int topin(char port, char pin)
+static int topin(char port, char pin)
 {
 	int p;
 
 	if (pin < '0' || pin > '8')
 		return -1;
 
-	p = palmapGetPortOffset(port);
-	if (p == -1)
-		return -1;
-
-	p += pin - '0';
-	return (p < PALMAP_PADS_SIZE)? p : -1;
+	return pmPortToPin(port, pin - '0');
 }
 
 static void pin_mode(BaseChannel *chp, char port_, char pin_, char mode_)
 {
 	char *mode_str;
 	int pin, pal_mode;
+	bool_t adc_enable = FALSE;
 
 	pin = topin(port_, pin_);
 	if (pin == -1) {
@@ -50,10 +43,11 @@ static void pin_mode(BaseChannel *chp, char port_, char pin_, char mode_)
 
 	switch (mode_) {
 		case 'A':
-			if (palmapGetAdcChannel(pin) != -1) {
+			if (pmGetAdcChannel(pin) != -1) {
 				mode_str = "ADC";
 				pin_modes[pin] = ADC;
 				pal_mode = PAL_MODE_INPUT_ANALOG;
+				adc_enable = TRUE;
 			} else {
 				chprintf(chp, "ERROR: not ADC\n");
 				return;
@@ -74,8 +68,8 @@ static void pin_mode(BaseChannel *chp, char port_, char pin_, char mode_)
 			break;
 	};
 
-	palSetPadMode(palmapGetPortId(pin), palmapGetPad(pin), pal_mode);
-
+	pmSetMode(pin, pal_mode);
+	pmAnalogStart(pin, adc_enable);
 	chprintf(chp, "PinMode%c%c=%s\n", port_, pin_, mode_str);
 }
 
@@ -90,12 +84,18 @@ static void pin_get(BaseChannel *chp, char port_, char pin_)
 	}
 
 	if (pin_modes[pin] == ADC) {
-		// TODO
-		chprintf(chp, "%c%c:%d.%d\n", port_, pin_, 0, 0);
+		int ad = pmAnalogReadLast(pin);
+
+		if (adc_raw_out) {
+			chprintf(chp, "%c%c:%d\n", port_, pin_, ad);
+		}
+		else {
+			ad = ad * 3300 / 4096; /* mV */
+			chprintf(chp, "%c%c:%d.%03d\n", port_, pin_, ad / 1000, ad % 1000);
+		}
 	}
 	else {
-		chprintf(chp, "%c%c:%c\n", port_, pin_,
-			palReadPad(palmapGetPortId(pin), palmapGetPad(pin))? '1' : '0' );
+		chprintf(chp, "%c%c:%c\n", port_, pin_, pmDigitalRead(pin)? '1' : '0' );
 	}
 }
 
@@ -115,8 +115,8 @@ static void pin_set(BaseChannel *chp, char port_, char pin_, char st)
 		return;
 	}
 
-	palWritePad(palmapGetPortId(pin), palmapGetPad(pin), st);
-	chprintf(chp, "%c%c=%d\n", port_, pin_, st);
+	pmDigitalWrite(pin, st);
+	chprintf(chp, "%c%c=%c\n", port_, pin_, (st)? '1' : '0');
 }
 
 static bool_t pin_adc_io_cb(BaseChannel *chp, char c, bool_t reinit)
@@ -179,5 +179,9 @@ void eterm_init_io_nodes(void)
 
 	for (i = 0; i < ARRAY_SIZE(io_nodes); i++)
 		etermRegister(&io_nodes[i]);
+
+#if HAL_USE_ADC
+	adcStart(&ADCD1, NULL);
+#endif
 }
 

@@ -7,10 +7,12 @@ TARGET_CONFIG	?= OR_STM32F1_DS
 
 ORFA	?= .
 
+include ${ORFA}/ext/ros_lib/ros.mk
+
 CSRC = $(LIBSRC) $(APPSRC) main.c
 
-CPPSRC =
+CPPSRC = $(ROSCPPSRC)
 
-INCDIR = $(ORFA)/configs/$(TARGET_CONFIG) $(LIBINC) $(APPINC)
+INCDIR = $(ORFA)/configs/$(TARGET_CONFIG) $(LIBINC) $(APPINC) $(ROSINC)
 
 include $(ORFA)/configs/$(TARGET_CONFIG)/Makefile.inc

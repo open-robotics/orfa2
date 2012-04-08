@@ -24,6 +24,12 @@
 #define GPIOB		IOPORT1
 #define GPIOB_LED	1
 
+/*
+ * PAL Map constants
+ */
+#define PALMAP_PADS_SIZE	16
+#define PALMAP_PORTS_SIZE	2
+
 #if !defined(_FROM_ASM_)
 #ifdef __cplusplus
 extern "C" {

@@ -6,13 +6,16 @@
 #define ADC_PERIOD_MS	20
 #define ADC_NUM			8
 
-static VirtualTimer vtmr;
 
-static adcsample_t adc_samples[ADC_NUM];
 static int adc_sample_to_pin[ADC_NUM];
 static size_t adc_sample_len = 0;
 
+#if HAL_USE_ADC
+
 static void adc_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n);
+
+static adcsample_t adc_samples[ADC_NUM];
+static VirtualTimer vtmr;
 
 static ADCConversionGroup adc_grp = {
 	FALSE,
@@ -52,6 +55,8 @@ static void adc_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n)
 		chSysUnlockFromIsr();
 	}
 }
+
+#endif /* HAL_USE_ADC */
 
 /*
  * Public API
@@ -116,13 +121,13 @@ int pmAnalogStart(int pin, bool_t state)
 	}
 
 	if (update_grp) {
-		/* TODO */
-
 		/* mark unused */
 		for (i = adc_sample_len; i < ADC_NUM; i++)
 			adc_sample_to_pin[i] = -1;
 
-		//chVTReset(&vtmr);
+#if HAL_USE_ADC
+
+		chVTReset(&vtmr);
 		adcStopConversion(&ADCD1);
 
 #define ADCH(pin) ((pin != -1)? pmGetAdcChannel(pin) : ADC_CHANNEL_IN0)
@@ -142,6 +147,8 @@ int pmAnalogStart(int pin, bool_t state)
 
 		if (adc_sample_len)
 			adcStartConversion(&ADCD1, &adc_grp, adc_samples, 1);
+
+#endif /* HAL_USE_ADC */
 	}
 
 	return 0;
@@ -151,10 +158,14 @@ int pmAnalogReadLast(int pin)
 {
 	size_t i;
 
+#if HAL_USE_ADC
+
 	for (i = 0; i < adc_sample_len; i++) {
 		if (adc_sample_to_pin[i] == pin)
 			return adc_samples[i];
 	}
+
+#endif /* HAL_USE_ADC */
 
 	return -1;
 }

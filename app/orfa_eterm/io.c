@@ -6,6 +6,11 @@
 
 #define BUFSZ	32
 
+#ifdef SIMULATOR
+#define PAL_MODE_INPUT_ANALOG PAL_MODE_INPUT
+#define PAL_MODE_INPUT_PULLUP PAL_MODE_INPUT
+#endif
+
 enum pin_mode {
 	IN,
 	OUT,

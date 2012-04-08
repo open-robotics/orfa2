@@ -21,6 +21,7 @@
 #include "ch.h"
 #include "hal.h"
 #include "rhal.h"
+#include "palmap.h"
 
 /**
  * @brief PAL setup.
@@ -36,6 +37,34 @@ const PALConfig pal_default_config = {
 #if RHAL_USE_RCSERVO || defined(__DOXYGEN__)
 const RCServoConfig rcs_default_config;
 #endif
+
+const struct palmap_pad_config palmap_pads[] =
+{
+	/* PORT A */
+	PM_PAD(IOPORT1, 0),
+	PM_PAD(IOPORT1, 1),
+	PM_PAD(IOPORT1, 2),
+	PM_PAD(IOPORT1, 3),
+	PM_PAD(IOPORT1, 4),
+	PM_PAD(IOPORT1, 5),
+	PM_PAD(IOPORT1, 6),
+	PM_PAD(IOPORT1, 7),
+	/* PORT D */
+	PM_PAD(IOPORT2, 0),
+	PM_PAD(IOPORT2, 1),
+	PM_PAD(IOPORT2, 2),
+	PM_PAD(IOPORT2, 3),
+	PM_PAD(IOPORT2, 4),
+	PM_PAD(IOPORT2, 5),
+	PM_PAD(IOPORT2, 6),
+	PM_PAD(IOPORT2, 7)
+};
+
+const struct palmap_port_config palmap_ports[] =
+{
+		{ 'A', 0 },
+		{ 'D', 8 }
+};
 
 /*
  * Board-specific initialization code.

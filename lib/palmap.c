@@ -3,7 +3,7 @@
 #include "rhal.h"
 #include "palmap.h"
 
-#define ADC_PERIOD_MS	10
+#define ADC_PERIOD_MS	20
 #define ADC_NUM			8
 
 static VirtualTimer vtmr;
@@ -12,31 +12,50 @@ static adcsample_t adc_samples[ADC_NUM];
 static int adc_sample_to_pin[ADC_NUM];
 static size_t adc_sample_len = 0;
 
-static void adc_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n)
-{
-}
+static void adc_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n);
 
-static ADCConversionGroup adc_grp_config = {
+static ADCConversionGroup adc_grp = {
 	FALSE,
 	0,
 	adc_cb,
 	NULL,
-	/* HW part */
+	/* HW dependent part */
 	0,
-	ADC_CR2_SWSTART,
+	ADC_CR2_TSVREFE,
+	ADC_SMPR1_SMP_AN10(ADC_SAMPLE_41P5) |
+		ADC_SMPR1_SMP_AN11(ADC_SAMPLE_41P5) |
+		ADC_SMPR1_SMP_AN12(ADC_SAMPLE_41P5) |
+		ADC_SMPR1_SMP_AN13(ADC_SAMPLE_41P5),
+	ADC_SMPR2_SMP_AN0(ADC_SAMPLE_41P5) |
+		ADC_SMPR2_SMP_AN1(ADC_SAMPLE_41P5) |
+		ADC_SMPR2_SMP_AN2(ADC_SAMPLE_41P5) |
+		ADC_SMPR2_SMP_AN3(ADC_SAMPLE_41P5),
 	0,
-	ADC_SMPR1_SMP_AN10(ADC_SAMPLE_55P5) |
-		ADC_SMPR1_SMP_AN11(ADC_SAMPLE_55P5) |
-		ADC_SMPR1_SMP_AN12(ADC_SAMPLE_55P5) |
-		ADC_SMPR1_SMP_AN13(ADC_SAMPLE_55P5),
-	ADC_SMPR2_SMP_AN0(ADC_SAMPLE_55P5) |
-		ADC_SMPR2_SMP_AN1(ADC_SAMPLE_55P5) |
-		ADC_SMPR2_SMP_AN2(ADC_SAMPLE_55P5) |
-		ADC_SMPR2_SMP_AN3(ADC_SAMPLE_55P5),
 	0,
 	0
 };
 
+static void vtmr_func(void *p)
+{
+	chSysLockFromIsr();
+	adcStartConversionI(&ADCD1, &adc_grp, adc_samples, 1);
+	chSysUnlockFromIsr();
+}
+
+static void adc_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n)
+{
+	if (adcp->state == ADC_COMPLETE) {
+		chSysLockFromIsr();
+		if (!chVTIsArmedI(&vtmr))
+			chVTSetI(&vtmr, MS2ST(ADC_PERIOD_MS), vtmr_func, NULL);
+		/* TODO send event */
+		chSysUnlockFromIsr();
+	}
+}
+
+/*
+ * Public API
+ */
 
 int pmGetPortOffset(char port_name)
 {
@@ -103,10 +122,26 @@ int pmAnalogStart(int pin, bool_t state)
 		for (i = adc_sample_len; i < ADC_NUM; i++)
 			adc_sample_to_pin[i] = -1;
 
-		chprintf(&SD1, "ADC pins:");
-		for (i = 0; i < adc_sample_len; i++)
-			chprintf(&SD1, " %d", adc_sample_to_pin[i]);
-		chprintf(&SD1, "\n");
+		//chVTReset(&vtmr);
+		adcStopConversion(&ADCD1);
+
+#define ADCH(pin) ((pin != -1)? pmGetAdcChannel(pin) : ADC_CHANNEL_IN0)
+
+		adc_grp.num_channels = adc_sample_len;
+		adc_grp.sqr1 = ADC_SQR1_NUM_CH(adc_sample_len);
+		adc_grp.sqr2 = ADC_SQR2_SQ7_N(ADCH(adc_sample_to_pin[6])) |
+			ADC_SQR2_SQ8_N(ADCH(adc_sample_to_pin[7]));
+		adc_grp.sqr3 = ADC_SQR3_SQ1_N(ADCH(adc_sample_to_pin[0])) |
+			ADC_SQR3_SQ2_N(ADCH(adc_sample_to_pin[1])) |
+			ADC_SQR3_SQ3_N(ADCH(adc_sample_to_pin[2])) |
+			ADC_SQR3_SQ4_N(ADCH(adc_sample_to_pin[3])) |
+			ADC_SQR3_SQ5_N(ADCH(adc_sample_to_pin[4])) |
+			ADC_SQR3_SQ6_N(ADCH(adc_sample_to_pin[5]));
+
+#undef ADCH
+
+		if (adc_sample_len)
+			adcStartConversion(&ADCD1, &adc_grp, adc_samples, 1);
 	}
 
 	return 0;

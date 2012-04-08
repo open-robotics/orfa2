@@ -30,7 +30,7 @@ extern const struct palmap_port_config palmap_ports[];
 #define pmDigitalRead(pin)			palReadPad(pmGetPortId(pin), pmGetPad(pin))
 #define pmDigitalWrite(pin, val)	palWritePad(pmGetPortId(pin), pmGetPad(pin), val)
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -40,7 +40,7 @@ extern "C" {
 	int pmAnalogStart(int pin, bool_t state);
 	int pmAnalogReadLast(int pin);
 
-#ifdef _cplusplus
+#ifdef __cplusplus
 }; /* extern */
 #endif
 

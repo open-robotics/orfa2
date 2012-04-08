@@ -11,7 +11,7 @@ include ${ORFA}/ext/ros_lib/ros.mk
 
 CSRC = $(LIBSRC) $(APPSRC) main.c
 
-CPPSRC = $(ROSCPPSRC)
+CPPSRC = $(ROSCPPSRC) $(APPCPPSRC)
 
 INCDIR = $(ORFA)/configs/$(TARGET_CONFIG) $(LIBINC) $(APPINC) $(ROSINC)
 

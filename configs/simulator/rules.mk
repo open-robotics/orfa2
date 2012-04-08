@@ -84,7 +84,7 @@ ifeq ($(USE_VERBOSE_COMPILE),yes)
 	$(CPPC) -c $(CPPFLAGS) -I. $(IINCDIR) $< -o $@
 else
 	@echo Compiling $<
-	@$(CPPC) -c $(CPPFLAGS)-I. $(IINCDIR) $< -o $@
+	@$(CPPC) -c $(CPPFLAGS) -I. $(IINCDIR) $< -o $@
 endif
 
 $(COBJS) : $(OBJDIR)/%.o : %.c Makefile

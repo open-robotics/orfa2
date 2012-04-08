@@ -22,6 +22,7 @@
 #include "chprintf.h"
 #include "servo.h"
 #include "eterm.h"
+#include "rosapp.h"
 
 /*
  * Red LED blinker thread, times are in milliseconds.
@@ -67,7 +68,8 @@ int main(void) {
   chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
 
   while (!chThdShouldTerminate()) {
-	appEterm((struct BaseChannel*)&SD1, 0, NULL);
+	//appEterm((BaseChannel*)&SD1, 0, NULL);
+	appRos((BaseChannel*)&SD1, 0, NULL);
     chThdSleepMilliseconds(200);
   }
 

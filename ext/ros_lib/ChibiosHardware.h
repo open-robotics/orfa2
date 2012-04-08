@@ -43,6 +43,9 @@ class ChibiosHardware {
     ChibiosHardware(BaseAsynchronousChannel* chp) {
       iostream = chp;
     }
+    ChibiosHardware(BaseChannel* chp) {
+      iostream = (BaseAsynchronousChannel*)chp;
+    }
     ChibiosHardware()
     {
       iostream = (BaseAsynchronousChannel*)&SD1;

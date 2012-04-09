@@ -40,15 +40,12 @@
 
 class ChibiosHardware {
   public:
-    ChibiosHardware(BaseAsynchronousChannel* chp) {
-      iostream = chp;
-    }
     ChibiosHardware(BaseChannel* chp) {
-      iostream = (BaseAsynchronousChannel*)chp;
+      iostream = chp;
     }
     ChibiosHardware()
     {
-      iostream = (BaseAsynchronousChannel*)&SD1;
+      iostream = (BaseChannel*)&SD1;
     }
     ChibiosHardware(ChibiosHardware& h){
       this->iostream = h.iostream;
@@ -56,15 +53,22 @@ class ChibiosHardware {
 
     void init() {};
 
-    int read() { return chIOGet(iostream); };
+    int read() {
+	    if (chIOGetWouldBlock(iostream))
+		    return -1;
+	    return chIOGet(iostream);
+    };
     void write(uint8_t* data, int length) {
-        chIOWriteTimeout(iostream, data, length, TIME_INFINITE);
-    }
+		for (int i = 0; i < length; i++)
+			chIOPut(iostream, data[i]);
+    };
 
-    unsigned long time() { return chTimeNow() * 1000 / CH_FREQUENCY; /* msec */ }
+    unsigned long time() {
+	    return chTimeNow() * 1000 / CH_FREQUENCY; /* msec */
+    };
 
   protected:
-    BaseAsynchronousChannel* iostream;
+    BaseChannel* iostream;
 };
 
 #endif

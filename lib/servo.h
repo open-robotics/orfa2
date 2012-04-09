@@ -18,6 +18,10 @@ typedef struct servo_msg {
 #define SERVO_QUERY_DONE	FALSE
 #define SERVO_QUERY_IN_PROGRESS	TRUE
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern bool_t servo_query_status;
 
 extern void servoInit(void);
@@ -27,13 +31,17 @@ static inline void servoCommandOne(uint8_t channel, uint16_t width,
 		uint16_t speed, uint16_t time)
 {
 	servo_msg_t msg = {
-		.channel = channel,
-		.width = width,
-		.speed = speed,
-		.time = time
+		channel,
+		width,
+		speed,
+		time
 	};
 
 	servoCommand(&msg, 1);
 }
+
+#ifdef __cplusplus
+};
+#endif
 
 #endif /* LIB_SERVO_H */

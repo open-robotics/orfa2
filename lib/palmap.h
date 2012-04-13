@@ -40,6 +40,8 @@ extern "C" {
 	int pmAnalogStart(int pin, bool_t state);
 	int pmAnalogReadLast(int pin);
 
+	void pmAnalogSetRate(int rate_ms);
+	EventSource *pmAnalogDoneEvent(void);
 #ifdef __cplusplus
 }; /* extern */
 #endif

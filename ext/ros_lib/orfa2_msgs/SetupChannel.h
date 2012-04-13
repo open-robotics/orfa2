@@ -15,6 +15,7 @@ static const char SETUPCHANNEL[] = "orfa2_msgs/SetupChannel";
     public:
       uint8_t pin;
       uint8_t type;
+      uint16_t rate_ms;
       enum { INPUT =  0 };
       enum { OUTPUT =  1 };
       enum { ANALOG_IN =  2 };
@@ -26,6 +27,9 @@ static const char SETUPCHANNEL[] = "orfa2_msgs/SetupChannel";
       offset += sizeof(this->pin);
       *(outbuffer + offset + 0) = (this->type >> (8 * 0)) & 0xFF;
       offset += sizeof(this->type);
+      *(outbuffer + offset + 0) = (this->rate_ms >> (8 * 0)) & 0xFF;
+      *(outbuffer + offset + 1) = (this->rate_ms >> (8 * 1)) & 0xFF;
+      offset += sizeof(this->rate_ms);
       return offset;
     }
 
@@ -36,11 +40,14 @@ static const char SETUPCHANNEL[] = "orfa2_msgs/SetupChannel";
       offset += sizeof(this->pin);
       this->type =  ((uint8_t) (*(inbuffer + offset)));
       offset += sizeof(this->type);
+      this->rate_ms =  ((uint16_t) (*(inbuffer + offset)));
+      this->rate_ms |= ((uint16_t) (*(inbuffer + offset + 1))) << (8 * 1);
+      offset += sizeof(this->rate_ms);
      return offset;
     }
 
     const char * getType(){ return SETUPCHANNEL; };
-    const char * getMD5(){ return "55383152dba40e09d167397bc208e655"; };
+    const char * getMD5(){ return "adfd864a1ad8f847f0de28bbf46aec10"; };
 
   };
 

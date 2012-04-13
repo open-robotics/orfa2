@@ -3,12 +3,13 @@
 #include "rhal.h"
 #include "palmap.h"
 
-#define ADC_PERIOD_MS	20
 #define ADC_NUM			8
 
 
 static int adc_sample_to_pin[ADC_NUM];
 static size_t adc_sample_len = 0;
+static EVENTSOURCE_DECL(adc_done_es);
+static systime_t adc_sample_rate = MS2ST(20);
 
 #if HAL_USE_ADC
 
@@ -40,6 +41,7 @@ static ADCConversionGroup adc_grp = {
 
 static void vtmr_func(void *p)
 {
+	(void)p;
 	chSysLockFromIsr();
 	adcStartConversionI(&ADCD1, &adc_grp, adc_samples, 1);
 	chSysUnlockFromIsr();
@@ -47,11 +49,13 @@ static void vtmr_func(void *p)
 
 static void adc_cb(ADCDriver *adcp, adcsample_t *buffer, size_t n)
 {
+	(void)buffer;
+	(void)n;
 	if (adcp->state == ADC_COMPLETE) {
 		chSysLockFromIsr();
 		if (!chVTIsArmedI(&vtmr))
-			chVTSetI(&vtmr, MS2ST(ADC_PERIOD_MS), vtmr_func, NULL);
-		/* TODO send event */
+			chVTSetI(&vtmr, adc_sample_rate, vtmr_func, NULL);
+		chEvtBroadcastI(&adc_done_es);
 		chSysUnlockFromIsr();
 	}
 }
@@ -168,5 +172,15 @@ int pmAnalogReadLast(int pin)
 #endif /* HAL_USE_ADC */
 
 	return -1;
+}
+
+void pmAnalogSetRate(int rate_ms)
+{
+	adc_sample_rate = MS2ST(rate_ms);
+}
+
+EventSource *pmAnalogDoneEvent(void)
+{
+	return &adc_done_es;
 }
 

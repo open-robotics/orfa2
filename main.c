@@ -59,6 +59,7 @@ int main(void) {
   chSysInit();
 
   sdStart(&SD1, NULL);
+  adcStart(&ADCD1, NULL);
 
   servoInit();
 

@@ -60,6 +60,7 @@ int main(void) {
 
   sdStart(&SD1, NULL);
   adcStart(&ADCD1, NULL);
+  dcmStart(&DCMD1, NULL);
 
   servoInit();
 

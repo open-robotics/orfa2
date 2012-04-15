@@ -119,4 +119,5 @@ void __early_init(void) {
  */
 void boardInit(void) {
 	/* TODO remap */
+	AFIO->MAPR |= AFIO_MAPR_TIM1_REMAP_FULLREMAP;
 }

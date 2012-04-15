@@ -34,6 +34,7 @@
 #include "hal.h"
 
 #include "rcservo.h"
+#include "dcmotor.h"
 
 /*===========================================================================*/
 /* External declarations.                                                    */

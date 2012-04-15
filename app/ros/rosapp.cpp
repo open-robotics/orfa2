@@ -10,6 +10,8 @@
 #include <orfa2_msgs/Analog.h>
 #include <orfa2_msgs/Digital.h>
 #include <orfa2_msgs/SetupChannel.h>
+#include <orfa2_msgs/Motor.h>
+#include <orfa2_msgs/SetupMotor.h>
 #include <roscpp/Empty.h>
 
 
@@ -27,8 +29,11 @@ uint8_t pin_mode[PALMAP_PADS_SIZE];
 
 void servo_cmd_cb(const orfa2_msgs::ServoState & cmd_msg);
 void digital_out_cb(const orfa2_msgs::Digital & cmd_msg);
+void motor_int_cb(const orfa2_msgs::Motor & cmd_msg);
+void motor_md2_cb(const orfa2_msgs::Motor & cmd_msg);
 void stop_cb(const roscpp::Empty::Request & req, roscpp::Empty::Response & res);
 void setup_channel_cb(const orfa2_msgs::SetupChannel::Request & req, orfa2_msgs::SetupChannel::Response & res);
+void setup_motor_cb(const orfa2_msgs::SetupMotor::Request & req, orfa2_msgs::SetupMotor::Response & res);
 
 ros::NodeHandle nh;
 
@@ -43,8 +48,13 @@ orfa2_msgs::Digital din_st_msg;
 ros::Publisher digital_in("~io/digital_in", &din_st_msg);
 ros::Subscriber<orfa2_msgs::Digital> digital_out("~io/digital_out", digital_out_cb);
 
+ros::Subscriber<orfa2_msgs::Motor> motor_int("~motor/integrated", motor_int_cb);
+ros::Subscriber<orfa2_msgs::Motor> motor_md2("~motor/robomd2", motor_md2_cb);
+/* TODO: motor status publisher */
+
 ros::ServiceServer<roscpp::Empty::Request, roscpp::Empty::Response> stop_srv("~stop", stop_cb);
 ros::ServiceServer<orfa2_msgs::SetupChannel::Request, orfa2_msgs::SetupChannel::Response> setup_ch_srv("~io/setup_channel", setup_channel_cb);
+ros::ServiceServer<orfa2_msgs::SetupMotor::Request, orfa2_msgs::SetupMotor::Response> setup_motor_srv("~motor/setup_channel", setup_motor_cb);
 
 /*
  * ROS Callbacks
@@ -91,6 +101,30 @@ void digital_out_cb(const orfa2_msgs::Digital& cmd_msg)
 	}
 }
 
+void motor_int_cb(const orfa2_msgs::Motor & cmd_msg)
+{
+	dcmwidth_t pw0, pw1;
+
+	/* TODO watchdog using Header stamp */
+	pw0 = cmd_msg.speed[0];
+	pw1 = cmd_msg.speed[1];
+
+	dcmEnableChannel(&DCMD1, 0, pw0);
+	dcmEnableChannel(&DCMD1, 1, pw1);
+}
+
+void motor_md2_cb(const orfa2_msgs::Motor & cmd_msg)
+{
+	dcmwidth_t pw2, pw3;
+
+	/* TODO watchdog using Header stamp */
+	pw2 = cmd_msg.speed[0];
+	pw3 = cmd_msg.speed[1];
+
+	dcmEnableChannel(&DCMD1, 2, pw2);
+	dcmEnableChannel(&DCMD1, 3, pw3);
+}
+
 void stop_cb(const roscpp::Empty::Request & req, roscpp::Empty::Response & res)
 {
 	nh.logerror("~stop not implemented");
@@ -133,6 +167,12 @@ void setup_channel_cb(const orfa2_msgs::SetupChannel::Request & req, orfa2_msgs:
 	pin_mode[req.pin] = req.type;
 	pmAnalogStart(req.pin, adc_en);
 	res.result = 1;
+}
+
+void setup_motor_cb(const orfa2_msgs::SetupMotor::Request & req, orfa2_msgs::SetupMotor::Response & res)
+{
+	res.result = 0;
+	/* TODO */
 }
 
 /*
@@ -242,8 +282,11 @@ void appRos(BaseChannel *chp, int argc, char *argv[])
 	nh.advertise(analog_in);
 	nh.advertise(digital_in);
 	nh.subscribe(digital_out);
+	nh.subscribe(motor_int);
+	nh.subscribe(motor_md2);
 	nh.advertiseService(stop_srv);
 	nh.advertiseService(setup_ch_srv);
+	nh.advertiseService(setup_motor_srv);
 
 	evtStart(&servo_et);
 	evtStart(&din_et);

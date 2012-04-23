@@ -24,23 +24,19 @@
 #include "eterm.h"
 #include "rosapp.h"
 
-/*
- * Red LED blinker thread, times are in milliseconds.
- */
-static WORKING_AREA(waThread1, 128);
-static msg_t Thread1(void *arg) {
+#include "shell.h"
 
-  (void)arg;
-  chRegSetThreadName("blinker");
-  while (TRUE) {
-    palClearPad(GPIOB, GPIOB_LED);
-    chThdSleepMilliseconds(500);
-    palSetPad(GPIOB, GPIOB_LED);
-    chThdSleepMilliseconds(500);
-  }
 
-  return 0;
-}
+const ShellCommand shell_cmds[] = {
+  { "eterm", appEterm },
+  { "ros", appRos },
+  {}
+};
+
+ShellConfig shell_cfg = {
+  .sc_channel = (BaseChannel*)&SD1,
+  .sc_commands = shell_cmds
+};
 
 /*
  * Application entry point.
@@ -64,15 +60,16 @@ int main(void) {
 
   servoInit();
 
-  /*
-   * Creates the blinker thread.
-   */
-  chThdCreateStatic(waThread1, sizeof(waThread1), NORMALPRIO, Thread1, NULL);
+  shellInit();
+  shellCreate(&shell_cfg, 1024, 7); /* TODO restart if terminated */
 
   while (!chThdShouldTerminate()) {
-	//appEterm((BaseChannel*)&SD1, 0, NULL);
-	appRos((BaseChannel*)&SD1, 0, NULL);
-    chThdSleepMilliseconds(200);
+
+    palClearPad(GPIOB, GPIOB_LED);
+    chThdSleepMilliseconds(500);
+
+    palSetPad(GPIOB, GPIOB_LED);
+    chThdSleepMilliseconds(500);
   }
 
   return 0;

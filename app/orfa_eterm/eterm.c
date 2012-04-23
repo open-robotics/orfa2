@@ -72,6 +72,7 @@ void appEterm(BaseChannel *chp, int argc, char *argv[])
 	etermRegister(&help_nodes[1]);
 
 	eterm_init_io_nodes();
+	eterm_init_motor_nodes();
 	eterm_init_ssc32_nodes();
 
 	chprintf(chp, "ORFA ETerm 2.0\n\n");

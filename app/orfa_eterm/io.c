@@ -184,9 +184,5 @@ void eterm_init_io_nodes(void)
 
 	for (i = 0; i < ARRAY_SIZE(io_nodes); i++)
 		etermRegister(&io_nodes[i]);
-
-#if HAL_USE_ADC
-	adcStart(&ADCD1, NULL);
-#endif
 }
 

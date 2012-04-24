@@ -18,7 +18,7 @@ ifeq ($(USE_LINK_GC),yes)
 endif
 
 # Source files groups and paths
-SRCPATHS  = $(sort $(dir $(CSRC)))
+SRCPATHS  = $(sort $(dir $(CSRC)) $(dir $(CPPSRC)))
 
 # Various directories
 OBJDIR    = $(BUILDDIR)/obj
@@ -104,6 +104,8 @@ else
 	@echo Compiling $<
 	@$(AS) -c $(ASFLAGS) -I. $(IINCDIR) $< -o $@
 endif
+
+LD=$(CPPC)
 
 %.elf: $(OBJS) $(LDSCRIPT)
 ifeq ($(USE_VERBOSE_COMPILE),yes)

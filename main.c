@@ -55,7 +55,9 @@ int main(void) {
   chSysInit();
 
   sdStart(&SD1, NULL);
+#if HAL_USE_ADC
   adcStart(&ADCD1, NULL);
+#endif
   dcmStart(&DCMD1, NULL);
 
   servoInit();

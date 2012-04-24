@@ -23,6 +23,11 @@ uint8_t pin_mode[PALMAP_PADS_SIZE];
 #define OUTPUT		1
 #define ANALOG_IN	2
 
+#ifdef SIMULATOR
+#define PAL_MODE_INPUT_PULLUP PAL_MODE_INPUT
+#define PAL_MODE_INPUT_ANALOG PAL_MODE_INPUT
+#endif
+
 /*
  * ROS topics
  */

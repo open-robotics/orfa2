@@ -40,7 +40,7 @@
 
 namespace ros
 {
-  typedef NodeHandle_<ChibiosHardware> NodeHandle;
+  typedef NodeHandle_<ChibiosHardware, 25, 25, 1024, 1024> NodeHandle;
 }
 
 #endif

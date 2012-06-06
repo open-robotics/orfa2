@@ -93,7 +93,7 @@ void appEterm(BaseChannel *chp, int argc, char *argv[])
 	help_cb(chp, '\n', TRUE);
 
 	while (!chThdShouldTerminate()) {
-		c = chIOGet(chp);
+		c = chnGet(chp);
 
 		if (c == '\r')
 			c = '\n';

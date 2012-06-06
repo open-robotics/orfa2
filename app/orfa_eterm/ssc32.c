@@ -116,7 +116,7 @@ static bool_t ssc32_query_cb(BaseChannel *chp, char c, bool_t reinit)
 
 	if (chan_len == 0) {
 		if (c == '\n') {
-			chIOPut(chp,
+			chnPut(chp,
 					(servo_query_status == SERVO_QUERY_DONE)?
 					'.' : '+');
 			return TRUE;
@@ -149,7 +149,7 @@ static bool_t ssc32_query_cb(BaseChannel *chp, char c, bool_t reinit)
 
 			for (num = 0; num < chan_len; num++) {
 				unsigned char r = rcsGetWidth(&RCSD1, channels[num]) / 10;
-				chIOPut(chp, r);
+				chnPut(chp, r);
 			}
 
 			return TRUE;

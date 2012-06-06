@@ -1,10 +1,10 @@
 # -*- Makefile -*-
 
-CHIBIOS_REV= 	4052
+CHIBIOS_REV= 	4258
 CHIBIOS_SVNURL=	https://chibios.svn.sourceforge.net/svnroot/chibios/trunk
 
 
-all: chibios
+all: chibios ros_lib
 
 
 chibios:
@@ -13,4 +13,8 @@ chibios:
 	else \
 		cd $@ && svn update -r $(CHIBIOS_REV) ;\
 	fi
+
+
+ros_lib:
+	rosrun rosserial_client make_library.py ./ orfa2_msgs nav_msgs
 

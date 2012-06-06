@@ -54,13 +54,14 @@ class ChibiosHardware {
     void init() {};
 
     int read() {
-	    if (chIOGetWouldBlock(iostream))
+	    if (chnGetWouldBlock(iostream))
 		    return -1;
-	    return chIOGet(iostream);
+	    return chnGet(iostream);
     };
     void write(uint8_t* data, int length) {
-		for (int i = 0; i < length; i++)
-			chIOPut(iostream, data[i]);
+		//for (int i = 0; i < length; i++)
+		//	chnPut(iostream, data[i]);
+		chnWrite(iostream, data, length);
     };
 
     unsigned long time() {

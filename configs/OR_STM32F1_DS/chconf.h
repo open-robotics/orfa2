@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011 Giovanni Di Sirio.
+                 2011,2012 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -459,7 +459,7 @@
  * @brief   Threads initialization hook.
  * @details User initialization code added to the @p chThdInit() API.
  *
- * @note    It is invoked from within @p chThdInit() and implicitily from all
+ * @note    It is invoked from within @p chThdInit() and implicitly from all
  *          the threads creation APIs.
  */
 #if !defined(THREAD_EXT_INIT_HOOK) || defined(__DOXYGEN__)

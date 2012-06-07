@@ -1,6 +1,6 @@
 /*
     ChibiOS/RT - Copyright (C) 2006,2007,2008,2009,2010,
-                 2011 Giovanni Di Sirio.
+                 2011,2012 Giovanni Di Sirio.
 
     This file is part of ChibiOS/RT.
 
@@ -269,7 +269,7 @@
 
 /**
  * @brief   Number of initialization attempts before rejecting the card.
- * @note    Attempts are performed at 10mS intevals.
+ * @note    Attempts are performed at 10mS intervals.
  */
 #if !defined(SDC_INIT_RETRY) || defined(__DOXYGEN__)
 #define SDC_INIT_RETRY              100
@@ -315,7 +315,7 @@
  *          buffers.
  */
 #if !defined(SERIAL_BUFFERS_SIZE) || defined(__DOXYGEN__)
-#define SERIAL_BUFFERS_SIZE         16
+#define SERIAL_BUFFERS_SIZE         256 /*16*/
 #endif
 
 /*===========================================================================*/

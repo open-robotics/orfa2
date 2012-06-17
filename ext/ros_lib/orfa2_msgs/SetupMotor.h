@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "ros/msg.h"
+#include "ros/duration.h"
 
 namespace orfa2_msgs
 {
@@ -19,6 +20,7 @@ static const char SETUPMOTOR[] = "orfa2_msgs/SetupMotor";
       int32_t kp;
       int32_t ki;
       int32_t kd;
+      ros::Duration timeout;
       enum { MODE_PWM =  0 };
       enum { MODE_SPEED =  1 };
 
@@ -61,6 +63,16 @@ static const char SETUPMOTOR[] = "orfa2_msgs/SetupMotor";
       *(outbuffer + offset + 2) = (u_kd.base >> (8 * 2)) & 0xFF;
       *(outbuffer + offset + 3) = (u_kd.base >> (8 * 3)) & 0xFF;
       offset += sizeof(this->kd);
+      *(outbuffer + offset + 0) = (this->timeout.sec >> (8 * 0)) & 0xFF;
+      *(outbuffer + offset + 1) = (this->timeout.sec >> (8 * 1)) & 0xFF;
+      *(outbuffer + offset + 2) = (this->timeout.sec >> (8 * 2)) & 0xFF;
+      *(outbuffer + offset + 3) = (this->timeout.sec >> (8 * 3)) & 0xFF;
+      offset += sizeof(this->timeout.sec);
+      *(outbuffer + offset + 0) = (this->timeout.nsec >> (8 * 0)) & 0xFF;
+      *(outbuffer + offset + 1) = (this->timeout.nsec >> (8 * 1)) & 0xFF;
+      *(outbuffer + offset + 2) = (this->timeout.nsec >> (8 * 2)) & 0xFF;
+      *(outbuffer + offset + 3) = (this->timeout.nsec >> (8 * 3)) & 0xFF;
+      offset += sizeof(this->timeout.nsec);
       return offset;
     }
 
@@ -106,11 +118,21 @@ static const char SETUPMOTOR[] = "orfa2_msgs/SetupMotor";
       u_kd.base |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3);
       this->kd = u_kd.real;
       offset += sizeof(this->kd);
+      this->timeout.sec =  ((uint32_t) (*(inbuffer + offset)));
+      this->timeout.sec |= ((uint32_t) (*(inbuffer + offset + 1))) << (8 * 1);
+      this->timeout.sec |= ((uint32_t) (*(inbuffer + offset + 2))) << (8 * 2);
+      this->timeout.sec |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3);
+      offset += sizeof(this->timeout.sec);
+      this->timeout.nsec =  ((uint32_t) (*(inbuffer + offset)));
+      this->timeout.nsec |= ((uint32_t) (*(inbuffer + offset + 1))) << (8 * 1);
+      this->timeout.nsec |= ((uint32_t) (*(inbuffer + offset + 2))) << (8 * 2);
+      this->timeout.nsec |= ((uint32_t) (*(inbuffer + offset + 3))) << (8 * 3);
+      offset += sizeof(this->timeout.nsec);
      return offset;
     }
 
     const char * getType(){ return SETUPMOTOR; };
-    const char * getMD5(){ return "3ecf6f3876df922b47150ef7b60f25e3"; };
+    const char * getMD5(){ return "d5802924c253d8ee0dc495c27cbb1b9d"; };
 
   };
 

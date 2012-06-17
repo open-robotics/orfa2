@@ -15,8 +15,10 @@
 #include <roscpp/Empty.h>
 
 
-EvTimer servo_et, din_et;
-uint8_t pin_mode[PALMAP_PADS_SIZE];
+static EvTimer servo_et, din_et;
+static uint8_t pin_mode[PALMAP_PADS_SIZE];
+static ros::Duration motor_int_to, motor_md2_to; /* timeout */
+static ros::Time motor_int_htime, motor_md2_htime; /* last Header.stamp */
 
 /* orfa2_msgs::SetupChannel::Request::CONST */
 #define INPUT		0
@@ -110,7 +112,8 @@ void motor_int_cb(const orfa2_msgs::Motor & cmd_msg)
 {
 	dcmwidth_t pw0, pw1;
 
-	/* TODO watchdog using Header stamp */
+	motor_int_htime = cmd_msg.header.stamp;
+
 	pw0 = cmd_msg.speed[0];
 	pw1 = cmd_msg.speed[1];
 
@@ -122,7 +125,8 @@ void motor_md2_cb(const orfa2_msgs::Motor & cmd_msg)
 {
 	dcmwidth_t pw2, pw3;
 
-	/* TODO watchdog using Header stamp */
+	motor_md2_htime = cmd_msg.header.stamp;
+
 	pw2 = cmd_msg.speed[0];
 	pw3 = cmd_msg.speed[1];
 
@@ -132,7 +136,12 @@ void motor_md2_cb(const orfa2_msgs::Motor & cmd_msg)
 
 void stop_cb(const roscpp::Empty::Request & req, roscpp::Empty::Response & res)
 {
-	nh.logerror("~stop not implemented");
+	servoStopAll();
+
+	dcmDisableChannel(&DCMD1, 0);
+	dcmDisableChannel(&DCMD1, 1);
+	dcmDisableChannel(&DCMD1, 2);
+	dcmDisableChannel(&DCMD1, 3);
 }
 
 void setup_channel_cb(const orfa2_msgs::SetupChannel::Request & req, orfa2_msgs::SetupChannel::Response & res)
@@ -177,6 +186,18 @@ void setup_channel_cb(const orfa2_msgs::SetupChannel::Request & req, orfa2_msgs:
 void setup_motor_cb(const orfa2_msgs::SetupMotor::Request & req, orfa2_msgs::SetupMotor::Response & res)
 {
 	res.result = 0;
+
+	if (req.channel == 0 || req.channel == 1) {
+		motor_int_to = req.timeout;
+		motor_int_htime = nh.now();
+		res.result = 1;
+	}
+	else if (req.channel == 2 || req.channel == 3) {
+		motor_md2_to = req.timeout;
+		motor_md2_htime = nh.now();
+		res.result = 1;
+	}
+
 	/* TODO */
 }
 
@@ -262,6 +283,7 @@ void adc_done_ev(eventid_t m)
 
 void appRos(BaseChannel *chp, int argc, char *argv[])
 {
+	ros::Time now, timeout;
 	EventListener el0, el1, el2;
 	evhandler_t handlers[] = {
 		servo_state_ev,
@@ -300,6 +322,26 @@ void appRos(BaseChannel *chp, int argc, char *argv[])
 		chEvtDispatch(handlers, chEvtWaitOneTimeout(ALL_EVENTS, MS2ST(1)));
 
 		nh.spinOnce();
+
+		now = nh.now();
+		timeout = motor_int_htime; timeout += motor_int_to;
+		if (motor_int_to.sec &&
+				(timeout.sec < now.sec ||
+				 (timeout.sec == now.sec && timeout.nsec < now.nsec))) {
+			/* internal watchdog */
+			dcmDisableChannel(&DCMD1, 0);
+			dcmDisableChannel(&DCMD1, 1);
+		}
+
+		timeout = motor_md2_htime; timeout += motor_md2_to;
+		if (motor_md2_to.sec &&
+				(timeout.sec < now.sec ||
+				 (timeout.sec == now.sec && timeout.nsec < now.nsec))) {
+			/* robomd2 watchdog */
+			dcmDisableChannel(&DCMD1, 2);
+			dcmDisableChannel(&DCMD1, 3);
+		}
+
 	}
 }
 

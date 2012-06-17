@@ -98,6 +98,15 @@ void servoCommand(servo_msg_t *msgs, size_t len)
 	}
 }
 
+void servoStopAll(void)
+{
+	size_t i;
+
+	for (i = 0; i < RCS_CHANNELS; i++) {
+		time_left[i] = 0;
+	}
+}
+
 void servoInit(void)
 {
 	rcsStart(&RCSD1, &rcs_default_config);

@@ -26,6 +26,7 @@ extern bool_t servo_query_status;
 
 extern void servoInit(void);
 extern void servoCommand(servo_msg_t *msgs, size_t len);
+extern void servoStopAll(void);
 
 static inline void servoCommandOne(uint8_t channel, uint16_t width,
 		uint16_t speed, uint16_t time)

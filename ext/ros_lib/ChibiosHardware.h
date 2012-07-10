@@ -40,6 +40,9 @@
 
 class ChibiosHardware {
   public:
+    ChibiosHardware(BaseSequentialStream* chp) {
+      iostream = (BaseChannel*)chp;
+    }
     ChibiosHardware(BaseChannel* chp) {
       iostream = chp;
     }
@@ -52,15 +55,23 @@ class ChibiosHardware {
     }
 
     void init() {};
+	void init(BaseSequentialStream *chp) {
+	  iostream = (BaseChannel*)chp;
+	}
+	void init(BaseChannel *chp) {
+	  iostream = chp;
+	}
 
     int read() {
-	    if (chnGetWouldBlock(iostream))
-		    return -1;
-	    return chnGet(iostream);
+		//if (chnGetWouldBlock(iostream))
+		//    return -1;
+	    msg_t r = chnGetTimeout(iostream, MS2ST(20));// TIME_IMMEDIATE);
+		if (r == Q_TIMEOUT || r == Q_RESET)
+			return -1;
+
+		return r;
     };
     void write(uint8_t* data, int length) {
-		//for (int i = 0; i < length; i++)
-		//	chnPut(iostream, data[i]);
 		chnWrite(iostream, data, length);
     };
 

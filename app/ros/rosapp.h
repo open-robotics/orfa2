@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-	void appRos(BaseChannel *chp, int argc, char *argv[]);
+	void appRos(BaseSequentialStream *chp, int argc, char *argv[]);
 
 #ifdef __cplusplus
 }; /* extern C */

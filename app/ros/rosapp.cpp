@@ -288,7 +288,7 @@ void adc_done_ev(eventid_t m)
 		analog_in.publish(&adc_st_msg);
 }
 
-void appRos(BaseChannel *chp, int argc, char *argv[])
+void appRos(BaseSequentialStream *chp, int argc, char *argv[])
 {
 	ros::Time now, timeout;
 	EventListener el0, el1, el2;
@@ -310,6 +310,7 @@ void appRos(BaseChannel *chp, int argc, char *argv[])
 
 	memset(pin_mode, INPUT, sizeof(pin_mode));
 
+	nh.getHardware()->init((BaseChannel*)chp);
 	nh.initNode();
 	nh.advertise(servo_state);
 	nh.subscribe(servo_cmd);

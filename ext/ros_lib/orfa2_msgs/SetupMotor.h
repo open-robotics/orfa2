@@ -17,12 +17,13 @@ static const char SETUPMOTOR[] = "orfa2_msgs/SetupMotor";
       uint8_t channel;
       uint8_t mode;
       uint8_t encoder;
-      int32_t kp;
-      int32_t ki;
-      int32_t kd;
+      float kp;
+      float ki;
+      float kd;
       ros::Duration timeout;
-      enum { MODE_PWM =  0 };
-      enum { MODE_SPEED =  1 };
+      enum { MODE_OPEN_LOOP =  0 };
+      enum { MODE_POSITION_CONTROL =  1 };
+      enum { MODE_SPEED_CONTROL =  2 };
 
     virtual int serialize(unsigned char *outbuffer) const
     {
@@ -34,7 +35,7 @@ static const char SETUPMOTOR[] = "orfa2_msgs/SetupMotor";
       *(outbuffer + offset + 0) = (this->encoder >> (8 * 0)) & 0xFF;
       offset += sizeof(this->encoder);
       union {
-        int32_t real;
+        float real;
         uint32_t base;
       } u_kp;
       u_kp.real = this->kp;
@@ -44,7 +45,7 @@ static const char SETUPMOTOR[] = "orfa2_msgs/SetupMotor";
       *(outbuffer + offset + 3) = (u_kp.base >> (8 * 3)) & 0xFF;
       offset += sizeof(this->kp);
       union {
-        int32_t real;
+        float real;
         uint32_t base;
       } u_ki;
       u_ki.real = this->ki;
@@ -54,7 +55,7 @@ static const char SETUPMOTOR[] = "orfa2_msgs/SetupMotor";
       *(outbuffer + offset + 3) = (u_ki.base >> (8 * 3)) & 0xFF;
       offset += sizeof(this->ki);
       union {
-        int32_t real;
+        float real;
         uint32_t base;
       } u_kd;
       u_kd.real = this->kd;
@@ -86,7 +87,7 @@ static const char SETUPMOTOR[] = "orfa2_msgs/SetupMotor";
       this->encoder =  ((uint8_t) (*(inbuffer + offset)));
       offset += sizeof(this->encoder);
       union {
-        int32_t real;
+        float real;
         uint32_t base;
       } u_kp;
       u_kp.base = 0;
@@ -97,7 +98,7 @@ static const char SETUPMOTOR[] = "orfa2_msgs/SetupMotor";
       this->kp = u_kp.real;
       offset += sizeof(this->kp);
       union {
-        int32_t real;
+        float real;
         uint32_t base;
       } u_ki;
       u_ki.base = 0;
@@ -108,7 +109,7 @@ static const char SETUPMOTOR[] = "orfa2_msgs/SetupMotor";
       this->ki = u_ki.real;
       offset += sizeof(this->ki);
       union {
-        int32_t real;
+        float real;
         uint32_t base;
       } u_kd;
       u_kd.base = 0;
@@ -132,7 +133,7 @@ static const char SETUPMOTOR[] = "orfa2_msgs/SetupMotor";
     }
 
     const char * getType(){ return SETUPMOTOR; };
-    const char * getMD5(){ return "d5802924c253d8ee0dc495c27cbb1b9d"; };
+    const char * getMD5(){ return "4f1475026dfbd7b270d8842e1d977a63"; };
 
   };
 

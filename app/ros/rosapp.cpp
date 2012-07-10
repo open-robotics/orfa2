@@ -17,6 +17,8 @@
 
 static EvTimer servo_et, din_et;
 static uint8_t pin_mode[PALMAP_PADS_SIZE];
+static uint8_t motor_mode[DCM_CHANNELS];
+static int8_t enc_to_motor[2];
 static ros::Duration motor_int_to, motor_md2_to; /* timeout */
 static ros::Time motor_int_htime, motor_md2_htime; /* last Header.stamp */
 
@@ -24,6 +26,11 @@ static ros::Time motor_int_htime, motor_md2_htime; /* last Header.stamp */
 #define INPUT		0
 #define OUTPUT		1
 #define ANALOG_IN	2
+
+/* orfa2_msgs::SetupMotor::Request::CONST */
+#define MODE_OPEN_LOOP			0
+#define MODE_POSITION_CONTROL	1
+#define MODE_SPEED_CONTROL		2
 
 #ifdef SIMULATOR
 #define PAL_MODE_INPUT_PULLUP PAL_MODE_INPUT
@@ -114,8 +121,8 @@ void motor_int_cb(const orfa2_msgs::Motor & cmd_msg)
 
 	motor_int_htime = cmd_msg.header.stamp;
 
-	pw0 = cmd_msg.speed[0];
-	pw1 = cmd_msg.speed[1];
+	pw0 = cmd_msg.value[0];
+	pw1 = cmd_msg.value[1];
 
 	dcmEnableChannel(&DCMD1, 0, pw0);
 	dcmEnableChannel(&DCMD1, 1, pw1);
@@ -127,8 +134,8 @@ void motor_md2_cb(const orfa2_msgs::Motor & cmd_msg)
 
 	motor_md2_htime = cmd_msg.header.stamp;
 
-	pw2 = cmd_msg.speed[0];
-	pw3 = cmd_msg.speed[1];
+	pw2 = cmd_msg.value[0];
+	pw3 = cmd_msg.value[1];
 
 	dcmEnableChannel(&DCMD1, 2, pw2);
 	dcmEnableChannel(&DCMD1, 3, pw3);

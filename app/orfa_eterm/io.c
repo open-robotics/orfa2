@@ -4,8 +4,6 @@
 #include "eterm.h"
 #include "palmap.h"
 
-#define BUFSZ	32
-
 #ifdef SIMULATOR
 #define PAL_MODE_INPUT_ANALOG PAL_MODE_INPUT
 #define PAL_MODE_INPUT_PULLUP PAL_MODE_INPUT
@@ -17,24 +15,19 @@ enum pin_mode {
 	ADC
 };
 
-static char buf[BUFSZ];
-static char *p;
-
 static enum pin_mode pin_modes[PALMAP_PADS_SIZE];
 static bool_t adc_raw_out = FALSE;
 
 
 static int topin(char port, char pin)
 {
-	int p;
-
 	if (pin < '0' || pin > '8')
 		return -1;
 
 	return pmPortToPin(port, pin - '0');
 }
 
-static void pin_mode(BaseChannel *chp, char port_, char pin_, char mode_)
+static void pin_mode(BaseSequentialStream *chp, char port_, char pin_, char mode_)
 {
 	char *mode_str;
 	int pin, pal_mode;
@@ -78,7 +71,7 @@ static void pin_mode(BaseChannel *chp, char port_, char pin_, char mode_)
 	chprintf(chp, "PinMode%c%c=%s\n", port_, pin_, mode_str);
 }
 
-static void pin_get(BaseChannel *chp, char port_, char pin_)
+static void pin_get(BaseSequentialStream *chp, char port_, char pin_)
 {
 	int pin;
 
@@ -104,7 +97,7 @@ static void pin_get(BaseChannel *chp, char port_, char pin_)
 	}
 }
 
-static void pin_set(BaseChannel *chp, char port_, char pin_, char st)
+static void pin_set(BaseSequentialStream *chp, char port_, char pin_, char st)
 {
 	int pin;
 
@@ -124,22 +117,11 @@ static void pin_set(BaseChannel *chp, char port_, char pin_, char st)
 	chprintf(chp, "%c%c=%c\n", port_, pin_, (st)? '1' : '0');
 }
 
-static bool_t pin_adc_io_cb(BaseChannel *chp, char c, bool_t reinit)
+static bool_t pin_adc_io_cb(BaseSequentialStream *chp, char c, char *buf, bool_t reinit)
 {
-	if (reinit) {
-		p = buf;
-		*p++ = c;
+	(void)c;
+	if (reinit)
 		return FALSE;
-	}
-
-	/* read to buffer */
-	if (c != '\n') {
-		if (p < buf + BUFSZ)
-			*p++ = c;
-
-		return FALSE;
-	}
-	p = '\0'; /* terminate buffer */
 
 	/* scan buffer */
 	if (strncmp(buf, "PinMode", 7) == 0) {
@@ -174,8 +156,8 @@ static bool_t pin_adc_io_cb(BaseChannel *chp, char c, bool_t reinit)
 }
 
 static eterm_node_t io_nodes[] = {
-	ETERM_INIT('P', "Pin control", pin_adc_io_cb),
-	ETERM_INIT('A', "ADC control", pin_adc_io_cb)
+	ETERM_INIT('P', "Pin control", TRUE, pin_adc_io_cb),
+	ETERM_INIT('A', "ADC control", TRUE, pin_adc_io_cb)
 };
 
 void eterm_init_io_nodes(void)

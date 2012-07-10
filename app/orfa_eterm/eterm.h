@@ -4,19 +4,22 @@
 #include "common.h"
 #include "chprintf.h"
 
-#define ETERM_INIT(_command, _help, _callback) \
-	{ _command, _help, _callback, NULL }
+#define ETERM_INIT(_command, _help, _buffered, _callback) \
+	{ _command, _help, _buffered, _callback, NULL }
 
-typedef bool_t (*eterm_cb_t)(BaseChannel *chp, char c, bool_t reinit);
+#define ETERM_BUFSZ 32
+
+typedef bool_t (*eterm_cb_t)(BaseSequentialStream *chp, char c, char *buf, bool_t reinit);
 
 typedef struct eterm_node_s {
 	char command;
 	char *help;
+	bool_t buffered;
 	eterm_cb_t cb;
 	struct eterm_node_s *next;
 } eterm_node_t;
 
 void etermRegister(eterm_node_t *parser);
-void appEterm(BaseChannel *chp, int argc, char *argv[]);
+void appEterm(BaseSequentialStream *chp, int argc, char *argv[]);
 
 #endif /* ETERM_H */

@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <ctype.h>
 
 #include "eterm.h"
 #include "servo.h"
@@ -10,7 +11,7 @@ typedef enum {
 	ST_PARSE_NUM
 } mv_state_t;
 
-static bool_t ssc32_move_cb(BaseChannel *chp, char c, bool_t reinit)
+static bool_t ssc32_move_cb(BaseSequentialStream *chp, char c, char *buf, bool_t reinit)
 {
 	static mv_state_t state = ST_GET_COMMAND;
 	static servo_msg_t msgs[RCS_CHANNELS];
@@ -18,6 +19,7 @@ static bool_t ssc32_move_cb(BaseChannel *chp, char c, bool_t reinit)
 	static size_t num = 0;
 	static char cmd = ' ';
 
+	(void)buf;
 	if (reinit) {
 		state = ST_GET_COMMAND;
 		msgs_len = 0;
@@ -25,7 +27,7 @@ static bool_t ssc32_move_cb(BaseChannel *chp, char c, bool_t reinit)
 		num = 0;
 	}
 
-	c = toupper(c);
+	c = toupper((int)c);
 
 	switch (state) {
 	case ST_PARSE_NUM:
@@ -94,12 +96,13 @@ static bool_t ssc32_move_cb(BaseChannel *chp, char c, bool_t reinit)
 	return TRUE;
 }
 
-static bool_t ssc32_query_cb(BaseChannel *chp, char c, bool_t reinit)
+static bool_t ssc32_query_cb(BaseSequentialStream *chp, char c, char *buf, bool_t reinit)
 {
 	static rcschannel_t channels[RCS_CHANNELS];
 	static size_t chan_len = 0, num = 0;
 	static bool_t error = FALSE;
 
+	(void)buf;
 	if (reinit) {
 		chan_len = 0;
 		error = FALSE;
@@ -116,9 +119,9 @@ static bool_t ssc32_query_cb(BaseChannel *chp, char c, bool_t reinit)
 
 	if (chan_len == 0) {
 		if (c == '\n') {
-			chnPut(chp,
+			chnPutTimeout((BaseChannel*)chp,
 					(servo_query_status == SERVO_QUERY_DONE)?
-					'.' : '+');
+					'.' : '+', TIME_INFINITE);
 			return TRUE;
 		}
 		else if (c == 'P') {
@@ -149,7 +152,7 @@ static bool_t ssc32_query_cb(BaseChannel *chp, char c, bool_t reinit)
 
 			for (num = 0; num < chan_len; num++) {
 				unsigned char r = rcsGetWidth(&RCSD1, channels[num]) / 10;
-				chnPut(chp, r);
+				chnPutTimeout((BaseChannel*)chp, r, TIME_INFINITE);
 			}
 
 			return TRUE;
@@ -163,8 +166,8 @@ static bool_t ssc32_query_cb(BaseChannel *chp, char c, bool_t reinit)
 }
 
 static eterm_node_t ssc32_nodes[] = {
-	ETERM_INIT('#', "SSC-32 Servo Move / Group Move", ssc32_move_cb),
-	ETERM_INIT('Q', "SSC-32 Query Status / Pulse Width", ssc32_query_cb)
+	ETERM_INIT('#', "SSC-32 Servo Move / Group Move", FALSE, ssc32_move_cb),
+	ETERM_INIT('Q', "SSC-32 Query Status / Pulse Width", FALSE, ssc32_query_cb)
 };
 
 void eterm_init_ssc32_nodes(void)

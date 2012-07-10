@@ -4,26 +4,13 @@
 
 #include "eterm.h"
 
-#define BUFSZ	32
-static char buf[BUFSZ];
-static char *p;
-
-static bool_t motor_cb(BaseChannel *chp, char c, bool_t reinit)
+static bool_t motor_cb(BaseSequentialStream *chp, char c, char *buf, bool_t reinit)
 {
-	if (reinit) {
-		p = buf;
-		*p++ = c;
-		return FALSE;
-	}
+	char *p;
 
-	/* read to buffer */
-	if (c != '\n') {
-		if (p < buf + BUFSZ)
-			*p++ = c;
-
+	(void)c;
+	if (reinit)
 		return FALSE;
-	}
-	p = '\0'; /* terminate buffer */
 
 	if (strncmp(buf, "DrvLR=", 6) == 0) {
 		int l, r;
@@ -38,6 +25,21 @@ static bool_t motor_cb(BaseChannel *chp, char c, bool_t reinit)
 			dcmEnableChannel(&DCMD1, 1, r * 10);
 		}
 	}
+#if DCM_CHANNELS == 4
+	else if (strncmp(buf, "DrvMdLR=", 8) == 0) {
+		int l, r;
+
+		l = strtol(buf + 8, &p, 10);
+		if (*p != ',')
+			chprintf(chp, "ERROR: DrvMdLR=l,r\n");
+		else {
+			r = strtol(p + 1, NULL, 10);
+
+			dcmEnableChannel(&DCMD1, 2, l * 10);
+			dcmEnableChannel(&DCMD1, 3, r * 10);
+		}
+	}
+#endif /* DCM_CHANNELS == 4 */
 	else {
 		chprintf(chp, "ERROR: unknown drv command \"%s\"\n", buf);
 	}
@@ -45,7 +47,7 @@ static bool_t motor_cb(BaseChannel *chp, char c, bool_t reinit)
 	return TRUE;
 }
 
-static eterm_node_t motor_node = ETERM_INIT('D', "DC Motor driver", motor_cb);
+static eterm_node_t motor_node = ETERM_INIT('D', "DC Motor driver", TRUE, motor_cb);
 
 void eterm_init_motor_nodes(void)
 {

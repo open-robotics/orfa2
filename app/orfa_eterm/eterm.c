@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include <ctype.h>
 
 #include "eterm.h"
 
@@ -12,7 +13,7 @@ static eterm_node_t *rootnode = NULL;
 static eterm_node_t *find_node(char command)
 {
 	eterm_node_t *it = rootnode;
-	command = toupper(command);
+	command = toupper((int)command);
 	while (it) {
 		if (it->command == command)
 			return it;
@@ -25,10 +26,11 @@ static eterm_node_t *find_node(char command)
  * Help
  */
 
-static bool_t help_cb(BaseChannel *chp, char c, bool_t reinit)
+static bool_t help_cb(BaseSequentialStream *chp, char c, char *buf, bool_t reinit)
 {
 	eterm_node_t *it = rootnode;
 
+	(void)buf;
 	(void)reinit;
 	if (c == '\n') {
 		chprintf(chp, "Commands:\n");
@@ -43,8 +45,8 @@ static bool_t help_cb(BaseChannel *chp, char c, bool_t reinit)
 }
 
 static eterm_node_t help_nodes[] = {
-	ETERM_INIT('?', "short help", help_cb),
-	ETERM_INIT('H', "short help", help_cb)
+	ETERM_INIT('?', "short help", FALSE, help_cb),
+	ETERM_INIT('H', "short help", FALSE, help_cb)
 };
 
 /*
@@ -60,11 +62,17 @@ void etermRegister(eterm_node_t *node)
 	rootnode = node;
 }
 
-void appEterm(BaseChannel *chp, int argc, char *argv[])
+extern void eterm_init_io_nodes(void);
+extern void eterm_init_motor_nodes(void);
+extern void eterm_init_ssc32_nodes(void);
+
+void appEterm(BaseSequentialStream *chp, int argc, char *argv[])
 {
+	char buf[ETERM_BUFSZ];
+	char *bufp=NULL;
 	eterm_node_t *currnode = NULL;
 	bool_t res;
-	char c;
+	msg_t c;
 
 	(void)argc;
 	(void)argv;
@@ -90,10 +98,12 @@ void appEterm(BaseChannel *chp, int argc, char *argv[])
 #endif
 
 	chprintf(chp, "\n");
-	help_cb(chp, '\n', TRUE);
+	help_cb(chp, '\n', buf, TRUE);
 
 	while (!chThdShouldTerminate()) {
-		c = chnGet(chp);
+		c = chnGetTimeout((BaseChannel*)chp, MS2ST(100));
+		if (c == Q_TIMEOUT)
+			continue;
 
 		if (c == '\r')
 			c = '\n';
@@ -107,10 +117,28 @@ void appEterm(BaseChannel *chp, int argc, char *argv[])
 				chprintf(chp, "ERROR: unknown command '%c'.\n", c);
 				continue;
 			}
-			res = currnode->cb(chp, c, TRUE);
+			if (currnode->buffered) {
+				bufp = buf;
+				*bufp++ = c;
+			}
+			res = currnode->cb(chp, c, buf, TRUE);
 		}
-		else
-			res = currnode->cb(chp, c, FALSE);
+		else {
+			if (currnode->buffered) {
+				if (c != '\n') {
+					if (bufp < buf + sizeof(buf))
+						*bufp++ = c;
+
+					continue;
+				}
+				else {
+					*bufp = '\0';
+					res = currnode->cb(chp, c, buf, FALSE);
+				}
+			}
+			else
+				res = currnode->cb(chp, c, buf, FALSE);
+		}
 
 		if (res)
 			currnode = NULL;

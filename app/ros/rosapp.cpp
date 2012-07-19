@@ -16,11 +16,10 @@
 
 
 static EvTimer servo_et, din_et;
+static EvTimer motor_int_et, motor_md2_et;
 static uint8_t pin_mode[PALMAP_PADS_SIZE];
 static uint8_t motor_mode[DCM_CHANNELS];
 static int8_t enc_to_motor[2];
-static ros::Duration motor_int_to, motor_md2_to; /* timeout */
-static ros::Time motor_int_htime, motor_md2_htime; /* last Header.stamp */
 
 /* orfa2_msgs::SetupChannel::Request::CONST */
 #define INPUT		0
@@ -117,28 +116,38 @@ void digital_out_cb(const orfa2_msgs::Digital& cmd_msg)
 
 void motor_int_cb(const orfa2_msgs::Motor & cmd_msg)
 {
-	dcmwidth_t pw0, pw1;
+	if (motor_mode[0] == MODE_OPEN_LOOP) {
+		dcmwidth_t pw = cmd_msg.value[0];
+		dcmEnableChannel(&DCMD1, 0, pw);
+	}
 
-	motor_int_htime = cmd_msg.header.stamp;
+	if (motor_mode[1] == MODE_OPEN_LOOP) {
+		dcmwidth_t pw = cmd_msg.value[1];
+		dcmEnableChannel(&DCMD1, 1, pw);
+	}
 
-	pw0 = cmd_msg.value[0];
-	pw1 = cmd_msg.value[1];
-
-	dcmEnableChannel(&DCMD1, 0, pw0);
-	dcmEnableChannel(&DCMD1, 1, pw1);
+	if (motor_int_et.et_interval) {
+		evtStop(&motor_int_et);
+		evtStart(&motor_int_et);
+	}
 }
 
 void motor_md2_cb(const orfa2_msgs::Motor & cmd_msg)
 {
-	dcmwidth_t pw2, pw3;
+	if (motor_mode[2] == MODE_OPEN_LOOP) {
+		dcmwidth_t pw = cmd_msg.value[0];
+		dcmEnableChannel(&DCMD1, 2, pw);
+	}
 
-	motor_md2_htime = cmd_msg.header.stamp;
+	if (motor_mode[3] == MODE_OPEN_LOOP) {
+		dcmwidth_t pw = cmd_msg.value[1];
+		dcmEnableChannel(&DCMD1, 3, pw);
+	}
 
-	pw2 = cmd_msg.value[0];
-	pw3 = cmd_msg.value[1];
-
-	dcmEnableChannel(&DCMD1, 2, pw2);
-	dcmEnableChannel(&DCMD1, 3, pw3);
+	if (motor_md2_et.et_interval) {
+		evtStop(&motor_md2_et);
+		evtStart(&motor_md2_et);
+	}
 }
 
 void stop_cb(const roscpp::Empty::Request & req, roscpp::Empty::Response & res)
@@ -194,18 +203,31 @@ void setup_motor_cb(const orfa2_msgs::SetupMotor::Request & req, orfa2_msgs::Set
 {
 	res.result = 0;
 
+	if (req.channel >= DCM_CHANNELS)
+		return;
+
 	if (req.channel == 0 || req.channel == 1) {
-		motor_int_to = req.timeout;
-		motor_int_htime = nh.now();
+		chSysLock();
+		motor_int_et.et_interval = S2ST(req.timeout.sec) \
+								   + MS2ST(req.timeout.nsec / 1000000);
+		chSysUnlock();
+
 		res.result = 1;
 	}
 	else if (req.channel == 2 || req.channel == 3) {
-		motor_md2_to = req.timeout;
-		motor_md2_htime = nh.now();
+		chSysLock();
+		motor_md2_et.et_interval = S2ST(req.timeout.sec) \
+								   + MS2ST(req.timeout.nsec / 1000000);
+		chSysUnlock();
+
 		res.result = 1;
 	}
 
-	/* TODO */
+	motor_mode[req.channel] = req.mode;
+
+	if (req.mode != MODE_OPEN_LOOP) {
+		res.result = 0;
+	}
 }
 
 /*
@@ -219,6 +241,7 @@ void servo_state_ev(eventid_t m)
 	uint16_t velocities[RCS_CHANNELS];
 	size_t n = 0;
 
+	(void)m;
 	for (int i = 0; i < RCS_CHANNELS; i++) {
 		if (rcsGetWidth(&RCSD1, i) != 0) {
 			servos[n] = i;
@@ -246,6 +269,7 @@ void din_ev(eventid_t m)
 	bool values[PALMAP_PADS_SIZE];
 	size_t n = 0;
 
+	(void)m;
 	for (int i = 0; i < PALMAP_PADS_SIZE; i++) {
 		if (pin_mode[i] == INPUT) {
 			pins[n] = i;
@@ -270,6 +294,7 @@ void adc_done_ev(eventid_t m)
 	uint16_t values[PALMAP_PADS_SIZE];
 	size_t n = 0;
 
+	(void)m;
 	for (int i = 0; i < PALMAP_PADS_SIZE; i++) {
 		if (pin_mode[i] == ANALOG_IN) {
 			pins[n] = i;
@@ -288,14 +313,29 @@ void adc_done_ev(eventid_t m)
 		analog_in.publish(&adc_st_msg);
 }
 
+void motor_int_to_ev(eventid_t m)
+{
+	(void)m;
+	dcmDisableChannel(&DCMD1, 0);
+	dcmDisableChannel(&DCMD1, 1);
+}
+
+void motor_md2_to_ev(eventid_t m)
+{
+	(void)m;
+	dcmDisableChannel(&DCMD1, 2);
+	dcmDisableChannel(&DCMD1, 3);
+}
+
 void appRos(BaseSequentialStream *chp, int argc, char *argv[])
 {
-	ros::Time now, timeout;
-	EventListener el0, el1, el2;
+	EventListener el0, el1, el2, el3, el4;
 	evhandler_t handlers[] = {
 		servo_state_ev,
 		din_ev,
-		adc_done_ev
+		adc_done_ev,
+		motor_int_to_ev,
+		motor_md2_to_ev
 	};
 
 	(void)argc;
@@ -303,10 +343,14 @@ void appRos(BaseSequentialStream *chp, int argc, char *argv[])
 
 	evtInit(&servo_et, MS2ST(100));
 	evtInit(&din_et, MS2ST(100));
+	evtInit(&motor_int_et, 0);
+	evtInit(&motor_md2_et, 0);
 
 	chEvtRegister(&servo_et.et_es, &el0, 0);
 	chEvtRegister(&din_et.et_es, &el1, 1);
 	chEvtRegister(pmAnalogDoneEvent(), &el2, 2);
+	chEvtRegister(&motor_int_et.et_es, &el3, 3);
+	chEvtRegister(&motor_md2_et.et_es, &el4, 4);
 
 	memset(pin_mode, INPUT, sizeof(pin_mode));
 
@@ -330,26 +374,6 @@ void appRos(BaseSequentialStream *chp, int argc, char *argv[])
 		chEvtDispatch(handlers, chEvtWaitOneTimeout(ALL_EVENTS, MS2ST(1)));
 
 		nh.spinOnce();
-
-		now = nh.now();
-		timeout = motor_int_htime; timeout += motor_int_to;
-		if (motor_int_to.sec &&
-				(timeout.sec < now.sec ||
-				 (timeout.sec == now.sec && timeout.nsec < now.nsec))) {
-			/* internal watchdog */
-			dcmDisableChannel(&DCMD1, 0);
-			dcmDisableChannel(&DCMD1, 1);
-		}
-
-		timeout = motor_md2_htime; timeout += motor_md2_to;
-		if (motor_md2_to.sec &&
-				(timeout.sec < now.sec ||
-				 (timeout.sec == now.sec && timeout.nsec < now.nsec))) {
-			/* robomd2 watchdog */
-			dcmDisableChannel(&DCMD1, 2);
-			dcmDisableChannel(&DCMD1, 3);
-		}
-
 	}
 }
 

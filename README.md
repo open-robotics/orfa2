@@ -18,7 +18,7 @@ Build
 
 Build requires gcc cross toolchain for ARM (arm-none-eabi), ChibiOS/RT trunk.
 
-git clone git://github.com/open-robotics/orfa2.git orfa2
-cd orfa2
-make -C ext
-make
+ git clone git://github.com/open-robotics/orfa2.git orfa2
+ cd orfa2
+ make -C ext
+ make

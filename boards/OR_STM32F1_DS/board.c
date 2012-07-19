@@ -95,13 +95,18 @@ const struct palmap_pad_config palmap_pads[] =
 	PM_PAD(GPIOD, GPIOD_D4),
 	PM_PAD(GPIOD, GPIOD_D5),
 	PM_PAD(GPIOD, GPIOD_D6),
-	PM_PAD(GPIOD, GPIOD_D7)
+	PM_PAD(GPIOD, GPIOD_D7),
+	/* RoboBus GP0..GP2 */
+	PM_PAD(GPIOA, GPIOA_RBGP0),
+	PM_PAD(GPIOD, GPIOD_RBGP1),
+	PM_PAD(GPIOD, GPIOD_RBGP2)
 };
 
 const struct palmap_port_config palmap_ports[] =
 {
 		{ 'A', 0 },
-		{ 'D', 8 }
+		{ 'D', 8 },
+		{ 'R', 16 }
 };
 
 /*

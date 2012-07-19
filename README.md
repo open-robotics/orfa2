@@ -10,15 +10,15 @@ Main goal is to provide modules for hobbyst robotics.
 Supported modules
 =================
 
-Currently only OR-STM32-DS Rev.0.
+Currently only OR-STM32F1-DS Rev.1.
 
 
 Build
 =====
 
-Build requires gcc cross toolchain for ARM, ChibiOS/RT trunk.
+Build requires gcc cross toolchain for ARM (arm-none-eabi), ChibiOS/RT trunk.
 
-git clone git://github.com/open-robotics/orfa.git
-cd orfa
+git clone git://github.com/open-robotics/orfa2.git orfa2
+cd orfa2
 make -C ext
 make
